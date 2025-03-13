@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres
+    container_name: local_pgdb
+    restart: always
+    ports:
+      - "${PG_PORT}:5432"
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    volumes:
+      - md_blog_db:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+volumes:
+  md_blog_db:

@@ -8,17 +8,17 @@ CREATE TABLE IF NOT EXISTS public.images
     id serial NOT NULL,
     note_id integer NOT NULL,
     file_path text COLLATE pg_catalog."default" NOT NULL,
-    file_hash text COLLATE pg_catalog."default" NOT NULL,
+    hash text COLLATE pg_catalog."default" NOT NULL,
     uploaded_at timestamp without time zone DEFAULT now(),
     CONSTRAINT images_pkey PRIMARY KEY (id),
-    CONSTRAINT images_file_hash_key UNIQUE (file_hash)
+    CONSTRAINT images_file_hash_key UNIQUE (hash)
 );
 
-CREATE TABLE IF NOT EXISTS public.note_images
+CREATE TABLE IF NOT EXISTS public.notes_images
 (
     note_id integer NOT NULL,
     image_id integer NOT NULL,
-    CONSTRAINT note_images_pkey PRIMARY KEY (note_id, image_id)
+    CONSTRAINT notes_images_pkey PRIMARY KEY (note_id, image_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.notes
@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS public.notes
     user_id integer NOT NULL,
     path character varying(255) COLLATE pg_catalog."default" NOT NULL,
     content text COLLATE pg_catalog."default" NOT NULL,
+    hash text COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now(),
     CONSTRAINT notes_pkey PRIMARY KEY (id)
@@ -35,7 +36,7 @@ CREATE TABLE IF NOT EXISTS public.notes
 CREATE TABLE IF NOT EXISTS public.users
 (
     id serial NOT NULL,
-    name character varying(255) NOT NULL,
+    name character varying(255) COLLATE pg_catalog."default" NOT NULL,
     email character varying(255) COLLATE pg_catalog."default" NOT NULL,
     api_token text COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
@@ -44,15 +45,15 @@ CREATE TABLE IF NOT EXISTS public.users
     CONSTRAINT users_email_key UNIQUE (email)
 );
 
-ALTER TABLE IF EXISTS public.note_images
-    ADD CONSTRAINT note_images_image_id_fkey FOREIGN KEY (image_id)
+ALTER TABLE IF EXISTS public.notes_images
+    ADD CONSTRAINT notes_images_image_id_fkey FOREIGN KEY (image_id)
     REFERENCES public.images (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE CASCADE;
 
 
-ALTER TABLE IF EXISTS public.note_images
-    ADD CONSTRAINT note_images_note_id_fkey FOREIGN KEY (note_id)
+ALTER TABLE IF EXISTS public.notes_images
+    ADD CONSTRAINT notes_images_note_id_fkey FOREIGN KEY (note_id)
     REFERENCES public.notes (id) MATCH SIMPLE
     ON UPDATE NO ACTION
     ON DELETE CASCADE;
@@ -66,12 +67,27 @@ ALTER TABLE IF EXISTS public.notes
 CREATE INDEX IF NOT EXISTS idx_notes_user_id
     ON public.notes(user_id);
 
-END;
 
--- Create Indexes for Faster Queries
-CREATE INDEX idx_notes_user_id ON notes(user_id);
-CREATE INDEX idx_images_note_id ON images(note_id);
-CREATE INDEX idx_images_hash ON images(file_hash);
+-- Index for faster lookups on images by note_id
+CREATE INDEX IF NOT EXISTS idx_images_note_id ON public.images(note_id);
+
+-- Index for faster lookups on notes_images by note_id and image_id
+CREATE INDEX IF NOT EXISTS idx_notes_images_note_id ON public.notes_images(note_id);
+CREATE INDEX IF NOT EXISTS idx_notes_images_image_id ON public.notes_images(image_id);
+
+-- Index for faster lookups on notes by user_id
+CREATE INDEX IF NOT EXISTS idx_notes_user_id ON public.notes(user_id);
+
+-- Index for faster searches by hash (useful if looking up images or notes by content hash)
+CREATE INDEX IF NOT EXISTS idx_images_hash ON public.images(hash);
+CREATE INDEX IF NOT EXISTS idx_notes_hash ON public.notes(hash);
+
+-- Index for faster lookups on users by api_token (authentication optimization)
+CREATE INDEX IF NOT EXISTS idx_users_api_token ON public.users(api_token);
+
+-- Composite index for filtering by both note_id and image_id together
+CREATE INDEX IF NOT EXISTS idx_notes_images_composite ON public.notes_images(note_id, image_id);
+
 
 -- Create Trigger Function to Update 'updated_at' on Notes Table
 CREATE OR REPLACE FUNCTION update_modified_column()
@@ -87,3 +103,5 @@ CREATE TRIGGER trigger_update_modified
 BEFORE UPDATE ON notes
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_column();
+
+END;

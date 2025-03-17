@@ -7,10 +7,16 @@ import (
 
 	"github.com/Tarat0r/Markdown-Blog/handlers"
 	"github.com/Tarat0r/Markdown-Blog/middleware"
+
+	"github.com/Tarat0r/Markdown-Blog/database"
+
+	_ "github.com/joho/godotenv/autoload" // Auto-load .env file
 )
 
 func main() {
 	// database.ConnectDatabase()
+	database.ConnectDB()
+	defer database.CloseDB() // Close connection pool on exit
 
 	// Define your middleware chain
 	middlewareChain := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)
@@ -24,8 +30,8 @@ func main() {
 
 	http.HandleFunc("DELETE /notes/{id}", middlewareChain(handlers.DeleteNote))
 
-	fs := http.FileServer(http.Dir("frontend/static/"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	// fs := http.FileServer(http.Dir("frontend/static/"))
+	// http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	fmt.Println("Server is working on http://localhost:8080")
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))

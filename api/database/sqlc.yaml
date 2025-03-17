@@ -1,0 +1,22 @@
+version: "2"
+cloud:
+    organization: ""
+    project: ""
+    hostname: ""
+servers:
+  - engine: postgresql
+    uri: "postgres://localhost:5432/postgres?sslmode=enable"
+sql:
+  - engine: "postgresql"
+    queries: "query.sql"
+    schema: "../../database/markdown_blog.sql"
+    gen:
+      go:
+        package: "db"
+        out: "sqlc"
+        sql_package: "pgx/v5"
+        emit_json_tags: true  # Enables JSON tags in structs
+overrides: {}
+plugins: []
+rules: []
+options: {}

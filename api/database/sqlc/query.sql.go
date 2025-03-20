@@ -11,8 +11,8 @@ import (
 
 const createNote = `-- name: CreateNote :one
 
-INSERT INTO notes (user_id, path, content) 
-VALUES ($1, $2, $3) 
+INSERT INTO notes (user_id, path, content, hash) 
+VALUES ($1, $2, $3, $4) 
 RETURNING id, user_id, path, content, hash, created_at, updated_at
 `
 
@@ -20,13 +20,19 @@ type CreateNoteParams struct {
 	UserID  int32  `json:"user_id"`
 	Path    string `json:"path"`
 	Content string `json:"content"`
+	Hash    string `json:"hash"`
 }
 
 // -----------------
 // Notes Queries --
 // -----------------
 func (q *Queries) CreateNote(ctx context.Context, arg CreateNoteParams) (Note, error) {
-	row := q.db.QueryRow(ctx, createNote, arg.UserID, arg.Path, arg.Content)
+	row := q.db.QueryRow(ctx, createNote,
+		arg.UserID,
+		arg.Path,
+		arg.Content,
+		arg.Hash,
+	)
 	var i Note
 	err := row.Scan(
 		&i.ID,
@@ -49,13 +55,21 @@ func (q *Queries) DeleteImage(ctx context.Context, id int32) error {
 	return err
 }
 
-const deleteNote = `-- name: DeleteNote :exec
-DELETE FROM notes WHERE id = $1
+const deleteNote = `-- name: DeleteNote :one
+DELETE FROM notes WHERE user_id = $1 and id = $2
+RETURNING path
 `
 
-func (q *Queries) DeleteNote(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deleteNote, id)
-	return err
+type DeleteNoteParams struct {
+	UserID int32 `json:"user_id"`
+	ID     int32 `json:"id"`
+}
+
+func (q *Queries) DeleteNote(ctx context.Context, arg DeleteNoteParams) (string, error) {
+	row := q.db.QueryRow(ctx, deleteNote, arg.UserID, arg.ID)
+	var path string
+	err := row.Scan(&path)
+	return path, err
 }
 
 const getIDByToken = `-- name: GetIDByToken :one
@@ -211,10 +225,11 @@ func (q *Queries) LinkImageToNote(ctx context.Context, arg LinkImageToNoteParams
 }
 
 const listNotesByUser = `-- name: ListNotesByUser :many
-SELECT path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 type ListNotesByUserRow struct {
+	ID   int32  `json:"id"`
 	Path string `json:"path"`
 	Hash string `json:"hash"`
 }
@@ -228,7 +243,7 @@ func (q *Queries) ListNotesByUser(ctx context.Context, userID int32) ([]ListNote
 	var items []ListNotesByUserRow
 	for rows.Next() {
 		var i ListNotesByUserRow
-		if err := rows.Scan(&i.Path, &i.Hash); err != nil {
+		if err := rows.Scan(&i.ID, &i.Path, &i.Hash); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

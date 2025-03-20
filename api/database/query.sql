@@ -15,21 +15,22 @@ WHERE api_token = $1;
 -------------------
 
 -- name: CreateNote :one
-INSERT INTO notes (user_id, path, content) 
-VALUES ($1, $2, $3) 
+INSERT INTO notes (user_id, path, content, hash) 
+VALUES ($1, $2, $3, $4) 
 RETURNING *;
 
 -- name: GetNoteByID :one
 SELECT * FROM notes WHERE id = $1;
 
 -- name: ListNotesByUser :many
-SELECT path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC;
+SELECT id, path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC;
 
 -- name: UpdateNote :exec
 UPDATE notes SET content = $2 WHERE id = $1;
 
--- name: DeleteNote :exec
-DELETE FROM notes WHERE id = $1;
+-- name: DeleteNote :one
+DELETE FROM notes WHERE user_id = $1 and id = $2
+RETURNING path;
 
 --------------------
 -- Images Queries --

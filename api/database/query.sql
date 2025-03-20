@@ -37,9 +37,9 @@ RETURNING path;
 --------------------
 
 -- name: UploadImage :one
-INSERT INTO images (note_id, file_path, hash) 
-VALUES ($1, $2, $3) 
-RETURNING *;
+INSERT INTO images (hash) 
+VALUES ($1) 
+RETURNING id;
 
 -- name: GetImageByID :one
 SELECT * FROM images WHERE id = $1;
@@ -72,3 +72,4 @@ WHERE ni.image_id = $1;
 
 -- name: UnlinkImageFromNote :exec
 DELETE FROM notes_images WHERE note_id = $1 AND image_id = $2;
+

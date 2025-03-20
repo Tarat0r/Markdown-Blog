@@ -9,6 +9,7 @@ import (
 	db "github.com/Tarat0r/Markdown-Blog/database/sqlc"
 )
 
+// TODO Delete images if not used
 func DeleteNote(w http.ResponseWriter, r *http.Request) {
 	user_id, ok := r.Context().Value("user_id").(int32)
 	if !ok {

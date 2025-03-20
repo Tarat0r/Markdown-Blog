@@ -85,8 +85,8 @@ curl -X POST http://localhost:8080/notes \
          ]
      };type=application/json" \
      -F "markdown=@note1.md" \
-     -F "files=@img1.jpg" \
-     -F "files=@img2.jpg"
+     -F "image=@img1.jpg" \
+     -F "image=@img2.jpg"
 
 
 ```

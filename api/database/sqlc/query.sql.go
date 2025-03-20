@@ -85,41 +85,29 @@ func (q *Queries) GetIDByToken(ctx context.Context, apiToken string) (int32, err
 }
 
 const getImageByHash = `-- name: GetImageByHash :one
-SELECT id, note_id, file_path, hash, uploaded_at FROM images WHERE hash = $1
+SELECT id, hash, uploaded_at FROM images WHERE hash = $1
 `
 
 func (q *Queries) GetImageByHash(ctx context.Context, hash string) (Image, error) {
 	row := q.db.QueryRow(ctx, getImageByHash, hash)
 	var i Image
-	err := row.Scan(
-		&i.ID,
-		&i.NoteID,
-		&i.FilePath,
-		&i.Hash,
-		&i.UploadedAt,
-	)
+	err := row.Scan(&i.ID, &i.Hash, &i.UploadedAt)
 	return i, err
 }
 
 const getImageByID = `-- name: GetImageByID :one
-SELECT id, note_id, file_path, hash, uploaded_at FROM images WHERE id = $1
+SELECT id, hash, uploaded_at FROM images WHERE id = $1
 `
 
 func (q *Queries) GetImageByID(ctx context.Context, id int32) (Image, error) {
 	row := q.db.QueryRow(ctx, getImageByID, id)
 	var i Image
-	err := row.Scan(
-		&i.ID,
-		&i.NoteID,
-		&i.FilePath,
-		&i.Hash,
-		&i.UploadedAt,
-	)
+	err := row.Scan(&i.ID, &i.Hash, &i.UploadedAt)
 	return i, err
 }
 
 const getImagesForNote = `-- name: GetImagesForNote :many
-SELECT i.id, i.note_id, i.file_path, i.hash, i.uploaded_at 
+SELECT i.id, i.hash, i.uploaded_at 
 FROM images i
 JOIN notes_images ni ON i.id = ni.image_id
 WHERE ni.note_id = $1
@@ -134,13 +122,7 @@ func (q *Queries) GetImagesForNote(ctx context.Context, noteID int32) ([]Image, 
 	var items []Image
 	for rows.Next() {
 		var i Image
-		if err := rows.Scan(
-			&i.ID,
-			&i.NoteID,
-			&i.FilePath,
-			&i.Hash,
-			&i.UploadedAt,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Hash, &i.UploadedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -300,29 +282,17 @@ func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) error {
 
 const uploadImage = `-- name: UploadImage :one
 
-INSERT INTO images (note_id, file_path, hash) 
-VALUES ($1, $2, $3) 
-RETURNING id, note_id, file_path, hash, uploaded_at
+INSERT INTO images (hash) 
+VALUES ($1) 
+RETURNING id
 `
-
-type UploadImageParams struct {
-	NoteID   int32  `json:"note_id"`
-	FilePath string `json:"file_path"`
-	Hash     string `json:"hash"`
-}
 
 // ------------------
 // Images Queries --
 // ------------------
-func (q *Queries) UploadImage(ctx context.Context, arg UploadImageParams) (Image, error) {
-	row := q.db.QueryRow(ctx, uploadImage, arg.NoteID, arg.FilePath, arg.Hash)
-	var i Image
-	err := row.Scan(
-		&i.ID,
-		&i.NoteID,
-		&i.FilePath,
-		&i.Hash,
-		&i.UploadedAt,
-	)
-	return i, err
+func (q *Queries) UploadImage(ctx context.Context, hash string) (int32, error) {
+	row := q.db.QueryRow(ctx, uploadImage, hash)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }

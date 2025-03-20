@@ -6,8 +6,6 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.images
 (
     id serial NOT NULL,
-    note_id integer NOT NULL,
-    file_path text COLLATE pg_catalog."default" NOT NULL,
     hash text COLLATE pg_catalog."default" NOT NULL,
     uploaded_at timestamp without time zone DEFAULT now(),
     CONSTRAINT images_pkey PRIMARY KEY (id),
@@ -66,14 +64,6 @@ ALTER TABLE IF EXISTS public.notes
     ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS idx_notes_user_id
     ON public.notes(user_id);
-
-
--- Index for faster lookups on images by note_id
-CREATE INDEX IF NOT EXISTS idx_images_note_id ON public.images(note_id);
-
--- Index for faster lookups on notes_images by note_id and image_id
-CREATE INDEX IF NOT EXISTS idx_notes_images_note_id ON public.notes_images(note_id);
-CREATE INDEX IF NOT EXISTS idx_notes_images_image_id ON public.notes_images(image_id);
 
 -- Index for faster lookups on notes by user_id
 CREATE INDEX IF NOT EXISTS idx_notes_user_id ON public.notes(user_id);

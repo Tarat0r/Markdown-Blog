@@ -22,13 +22,13 @@ func main() {
 	middlewareChain := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)
 
 	http.HandleFunc("GET /notes", middlewareChain(handlers.ListNotes))
-	http.HandleFunc("GET /notes/{id}", middlewareChain(handlers.GetNote))
+	http.HandleFunc("GET /notes/{NoteID}", middlewareChain(handlers.GetNote))
 
 	http.HandleFunc("POST /notes", middlewareChain(handlers.CreateNote))
 
-	http.HandleFunc("PUT /notes/{id}", middlewareChain(handlers.UpdateNote))
+	http.HandleFunc("PUT /notes/{NoteID}", middlewareChain(handlers.UpdateNote))
 
-	http.HandleFunc("DELETE /notes/{id}", middlewareChain(handlers.DeleteNote))
+	http.HandleFunc("DELETE /notes/{NoteID}", middlewareChain(handlers.DeleteNote))
 
 	// fs := http.FileServer(http.Dir("frontend/static/"))
 	// http.Handle("/static/", http.StripPrefix("/static/", fs))

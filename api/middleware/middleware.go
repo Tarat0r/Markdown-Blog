@@ -25,7 +25,7 @@ type ErrorResponse struct {
 // LoggingMiddleware logs incoming requests
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request URI: %s\n", r.RequestURI)
+		log.Printf("user: %d  Request: %s %s\n", r.Context().Value("user_id").(int32), r.Method, r.RequestURI)
 		next(w, r) // Call the next handler
 	}
 }

@@ -10,8 +10,6 @@ import (
 
 type Image struct {
 	ID         int32            `json:"id"`
-	NoteID     int32            `json:"note_id"`
-	FilePath   string           `json:"file_path"`
 	Hash       string           `json:"hash"`
 	UploadedAt pgtype.Timestamp `json:"uploaded_at"`
 }

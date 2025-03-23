@@ -32,7 +32,7 @@ func DeleteNote(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, r, err, "Error deleting note", http.StatusInternalServerError)
 		return
 	}
-	pathJSON := map[string]string{"path": path}
+	pathJSON := map[string]string{"message": "Note deleted successfully", "path": path}
 	log.Println("path:", pathJSON)
 	ResponseJSON(w, http.StatusOK, pathJSON)
 }

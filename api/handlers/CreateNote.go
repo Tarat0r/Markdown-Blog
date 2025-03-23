@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -41,15 +39,6 @@ type Image struct {
 	Path string
 	File multipart.File
 	Hash string
-}
-
-// ComputeSHA256Hash generates a SHA-256 hash of a file
-func ComputeSHA256Hash(file multipart.File) (string, error) {
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func CreateNote(w http.ResponseWriter, r *http.Request) {
@@ -134,6 +123,11 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mdContent, err := io.ReadAll(mdFile)
+	if err != nil {
+		log.Println("user:", user_id, "", "Failed to read markdown file", " ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	note_params.Content, err = MarkdownToHTML(w, r, images, mdContent, note_params.Path, user_id)
 	if err != nil {
@@ -176,6 +170,7 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return JSON Response
+	log.Print("user:", user_id, "", "Note created successfully")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -283,7 +278,7 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 	var images []Image // Slice to hold images
 	var err error
 
-	log.Println("req:", req)
+	// log.Print("user:", user_id, "", req)
 	uploadedImages := r.MultipartForm.File["image"]
 
 	// Check if the number of uploaded images matches the number of image paths in JSON metadata

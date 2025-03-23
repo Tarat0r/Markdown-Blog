@@ -2,8 +2,12 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strconv"
 
@@ -49,4 +53,13 @@ func GetIDFromURI(w http.ResponseWriter, r *http.Request, user_id int32) (int32,
 	}
 
 	return note_id, true
+}
+
+// ComputeSHA256Hash generates a SHA-256 hash of a file
+func ComputeSHA256Hash(file multipart.File) (string, error) {
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }

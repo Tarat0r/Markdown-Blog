@@ -23,6 +23,7 @@ func main() {
 
 	http.HandleFunc("GET /notes", middlewareChain(handlers.ListNotes))
 	http.HandleFunc("GET /notes/{NoteID}", middlewareChain(handlers.GetNote))
+	http.HandleFunc("GET /images/{ImageHash}", middlewareChain(handlers.GetImage))
 
 	http.HandleFunc("POST /notes", middlewareChain(handlers.CreateNote))
 

@@ -69,6 +69,26 @@ curl -X GET http://localhost:8080/notes/{id} \
 </details>
 
 <details>
+<summary><code>GET</code> <code><b>/images/{hash}</b></code> <code>(Getting a specific image)</code></summary>
+
+#### Request
+
+```bash
+curl -X GET http://localhost:8080/images/{hash} \
+     -H "API_TOKEN_FORMAT: ^[a-zA-Z0-9]{64}$" \
+```
+
+#### Response
+
+```http
+HTTP/1.1 200 OK
+Content-Type: image/jpeg
+Content-Length: 13422
+```
+
+</details>
+
+<details>
 <summary><code>POST</code> <code><b>/notes</b></code> <code>(Create a new note)</code></summary>
 
 #### Request
@@ -153,6 +173,7 @@ curl -X DELETE http://localhost:8080/notes/{id} \
 
 - [x] GET /notes
 - [x] GET /notes/{id}
-- [ ] POST /notes
+- [x] GET /images/{hash}
+- [x] POST /notes
 - [ ] PUT /notes/{id}
 - [x] DELETE /notes/{id}

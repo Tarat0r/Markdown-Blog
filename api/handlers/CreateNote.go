@@ -7,21 +7,21 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/Tarat0r/Markdown-Blog/database"
 	db "github.com/Tarat0r/Markdown-Blog/database/sqlc"
+	obsidian "github.com/powerman/goldmark-obsidian"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
-	"github.com/yuin/goldmark/parser"
-	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/text"
+	"go.abhg.dev/goldmark/wikilink"
 )
 
 // JSON Metadata Struct
@@ -133,15 +133,47 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Note hash:", note_params.Hash)
 	mdContent, err := io.ReadAll(mdFile)
-	// fmt.Println("Note", string(mdContent))
 
-	note_params.Content = MarkdownToHTML(w, r, images, mdContent)
+	note_params.Content, err = MarkdownToHTML(w, r, images, mdContent, note_params.Path, user_id)
+	if err != nil {
+		writeJSONError(w, r, err, "Failed to convert Markdown to HTML (Image file is missing)", http.StatusInternalServerError)
+		return
+	}
 
-	log.Println(note_params.Content)
+	notesByPath, err := database.Queries.GetNoteByPath(r.Context(), db.GetNoteByPathParams{Path: note_params.Path, UserID: note_params.UserID})
+	if err != nil {
+		writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
+		return
+	}
+	if len(notesByPath) > 0 {
+		writeJSONError(w, r, nil, "Note already exists", http.StatusBadRequest)
+		return
+	}
 
-	//----------------------------------------------------------------
+	uploadedNote, err := database.Queries.CreateNote(r.Context(), note_params)
+	if err != nil {
+		writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
+		return
+	}
+
+	// Link note and images
+	for _, img := range images {
+
+		_, err = database.Queries.GetNoteImage(r.Context(), db.GetNoteImageParams{ImageID: img.Id, NoteID: uploadedNote.ID})
+		if err == nil {
+			continue
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			writeJSONError(w, r, err, "Failed to get note, image", http.StatusInternalServerError)
+			return
+		}
+		err := database.Queries.LinkImageToNote(r.Context(), db.LinkImageToNoteParams{ImageID: img.Id, NoteID: uploadedNote.ID})
+		if err != nil {
+			log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: uploadedNote.ID})
+			writeJSONError(w, r, err, "Failed to link note and image", http.StatusInternalServerError)
+			return
+		}
+	}
 
 	// Return JSON Response
 	w.Header().Set("Content-Type", "application/json")
@@ -162,51 +194,87 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 
 //-*-*-*-***-*-**-*--*-**--*--*-*-*-*-**--*-*-*-*-*-**--*-*-**-*--*
 
+// CustomResolver is a wikilink.Resolver that returns the target as-is (no .html).
+type CustomResolver struct{}
+
+func (r CustomResolver) ResolveWikilink(info *wikilink.Node) ([]byte, error) {
+	// info.Target is the contents of [[link]]
+	return info.Target, nil // no .html suffix, no transformation
+}
+
 // ConvertMarkdown processes Markdown and applies AST modifications
-func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []byte) string {
+func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []byte, notePath string, userID int32) (string, error) {
 	// Create a new Markdown parser
 	gm := goldmark.New(
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-		goldmark.WithRendererOptions(html.WithHardWraps()),
+		goldmark.WithExtensions(
+			obsidian.NewPlugTasks(),
+			obsidian.NewObsidian(),
+			&wikilink.Extender{
+				Resolver: CustomResolver{},
+			},
+		),
 	)
-
 	// Parse the Markdown into an AST (Abstract Syntax Tree)
 	reader := text.NewReader(md)
 	doc := gm.Parser().Parse(reader)
 
 	// Call the separate function to modify AST
 	// modifyAST(doc)
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+
+	imageCount := 0
+	rx := regexp.MustCompile(`(?i)^https?://[^\s/$.?#].[^\s]*$`)
+	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		switch node := n.(type) {
-		// TODO check if the image links are the same count like the image files
 		// Modify image links (add CDN prefix)
 		case *ast.Image:
 			if entering {
 				oldSrc := string(node.Destination)
-				fmt.Println(oldSrc)
-				newSrc := "http://localhost/static/" + img[0].Hash // TODO make it env
-				node.Destination = []byte(newSrc)                  // TODO if is http image - don't change
-			}
+				if !rx.MatchString(oldSrc) {
+					if imageCount >= len(img) {
+						return ast.WalkStop, errors.New("Image count does not match")
+					}
 
-		// Modify Markdown links (.md → .html)
-		case *ast.Link:
-			if entering {
-				oldHref := string(node.Destination)
-				if strings.HasSuffix(oldHref, ".md") {
-					newHref := strings.TrimSuffix(oldHref, ".md") + ".html"
-					node.Destination = []byte(newHref)
+					newSrc := os.Getenv("STATIC_PATH") + "/" + img[imageCount].Hash
+
+					node.Destination = []byte(newSrc)
+					imageCount++
 				}
 			}
+
+			// 	//Obsidian Links
+		case *wikilink.Node:
+			if entering && !rx.MatchString(string(node.Target)) {
+				if node.Embed {
+					if imageCount >= len(img) {
+						return ast.WalkStop, errors.New("Image count does not match")
+					}
+					newSrc := os.Getenv("STATIC_PATH") + "/" + img[imageCount].Hash
+
+					imageCount++
+					node.Target = []byte(newSrc)
+				} else {
+					oldLink := string(node.Target)
+					// TODO Change the link format, if needed
+					node.Target = []byte(oldLink)
+
+				}
+			}
+
 		}
 		return ast.WalkContinue, nil
+
 	})
+
+	if err != nil {
+		return "", err
+	}
 
 	// Render the modified AST back into HTML
 	var buf bytes.Buffer
 	if err := gm.Renderer().Render(&buf, md, doc); err != nil {
 		log.Fatal(err)
 	}
-	return buf.String()
+	return buf.String(), nil
 }
 
 // ImageUploadHandler handles image uploads
@@ -260,18 +328,33 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 		}
 
 		//Check if image already exists
-		_, err := database.Queries.GetImageByHash(r.Context(), img.Hash)
+		imgFromDB, err := database.Queries.GetImageByHash(r.Context(), img.Hash)
+		img.Id = imgFromDB.ID
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				// Save image if it does not exist
 				savePath := os.Getenv("STATIC_PATH") + "/" + img.Hash
+
+				// Re-open the file to read it again from start
+				imgReader, err := uploadedImages[i].Open()
+				if err != nil {
+					writeJSONError(w, r, err, "Failed to re-open image", http.StatusInternalServerError)
+					return nil
+				}
+				defer imgReader.Close()
+
 				outFile, err := os.Create(savePath)
 				if err != nil {
 					writeJSONError(w, r, err, "Failed to save image", http.StatusInternalServerError)
 					return nil
 				}
 				defer outFile.Close()
-				io.Copy(outFile, img.File)
+
+				_, err = io.Copy(outFile, imgReader)
+				if err != nil {
+					writeJSONError(w, r, err, "Failed to write image to file", http.StatusInternalServerError)
+					return nil
+				}
 
 				// Add to database
 				img.Id, err = database.Queries.UploadImage(r.Context(), img.Hash)

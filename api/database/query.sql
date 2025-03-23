@@ -29,7 +29,8 @@ SELECT id, path FROM notes WHERE user_id = $1 and path LIKE $2;
 SELECT id, path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC;
 
 -- name: UpdateNote :exec
-UPDATE notes SET content = $2 WHERE id = $1;
+UPDATE notes SET content = $3, hash = $4
+WHERE user_id = $1 and path = $2;
 
 -- name: DeleteNote :one
 DELETE FROM notes WHERE user_id = $1 and id = $2
@@ -88,4 +89,12 @@ WHERE ni.image_id = $1;
 
 -- name: UnlinkImageFromNote :exec
 DELETE FROM notes_images WHERE note_id = $1 AND image_id = $2;
+
+-- name: UnlinkOldImagesFromNote :exec
+DELETE FROM notes_images ni
+USING images i
+WHERE ni.image_id = i.id
+  AND ni.note_id = $1
+  AND i.hash NOT IN (SELECT UNNEST(sqlc.arg(hashes)::text[]));
+
 

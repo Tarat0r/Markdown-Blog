@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-	// database.ConnectDatabase()
 	database.ConnectDB()
 	defer database.CloseDB() // Close connection pool on exit
 

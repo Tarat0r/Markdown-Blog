@@ -175,5 +175,5 @@ curl -X DELETE http://localhost:8080/notes/{id} \
 - [x] GET /notes/{id}
 - [x] GET /images/{hash}
 - [x] POST /notes
-- [ ] PUT /notes/{id}
+- [x] PUT /notes/{id}
 - [x] DELETE /notes/{id}

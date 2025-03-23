@@ -317,17 +317,43 @@ func (q *Queries) UnlinkImageFromNote(ctx context.Context, arg UnlinkImageFromNo
 	return err
 }
 
+const unlinkOldImagesFromNote = `-- name: UnlinkOldImagesFromNote :exec
+DELETE FROM notes_images ni
+USING images i
+WHERE ni.image_id = i.id
+  AND ni.note_id = $1
+  AND i.hash NOT IN (SELECT UNNEST($2::text[]))
+`
+
+type UnlinkOldImagesFromNoteParams struct {
+	NoteID int32    `json:"note_id"`
+	Hashes []string `json:"hashes"`
+}
+
+func (q *Queries) UnlinkOldImagesFromNote(ctx context.Context, arg UnlinkOldImagesFromNoteParams) error {
+	_, err := q.db.Exec(ctx, unlinkOldImagesFromNote, arg.NoteID, arg.Hashes)
+	return err
+}
+
 const updateNote = `-- name: UpdateNote :exec
-UPDATE notes SET content = $2 WHERE id = $1
+UPDATE notes SET content = $3, hash = $4
+WHERE user_id = $1 and path = $2
 `
 
 type UpdateNoteParams struct {
-	ID      int32  `json:"id"`
+	UserID  int32  `json:"user_id"`
+	Path    string `json:"path"`
 	Content string `json:"content"`
+	Hash    string `json:"hash"`
 }
 
 func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) error {
-	_, err := q.db.Exec(ctx, updateNote, arg.ID, arg.Content)
+	_, err := q.db.Exec(ctx, updateNote,
+		arg.UserID,
+		arg.Path,
+		arg.Content,
+		arg.Hash,
+	)
 	return err
 }
 

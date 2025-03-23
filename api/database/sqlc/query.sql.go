@@ -152,6 +152,61 @@ func (q *Queries) GetNoteByID(ctx context.Context, id int32) (Note, error) {
 	return i, err
 }
 
+const getNoteByPath = `-- name: GetNoteByPath :many
+SELECT id, path FROM notes WHERE user_id = $1 and path LIKE $2
+`
+
+type GetNoteByPathParams struct {
+	UserID int32  `json:"user_id"`
+	Path   string `json:"path"`
+}
+
+type GetNoteByPathRow struct {
+	ID   int32  `json:"id"`
+	Path string `json:"path"`
+}
+
+func (q *Queries) GetNoteByPath(ctx context.Context, arg GetNoteByPathParams) ([]GetNoteByPathRow, error) {
+	rows, err := q.db.Query(ctx, getNoteByPath, arg.UserID, arg.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetNoteByPathRow
+	for rows.Next() {
+		var i GetNoteByPathRow
+		if err := rows.Scan(&i.ID, &i.Path); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getNoteImage = `-- name: GetNoteImage :one
+
+SELECT note_id, image_id FROM notes_images
+WHERE note_id = $1 AND image_id = $2
+`
+
+type GetNoteImageParams struct {
+	NoteID  int32 `json:"note_id"`
+	ImageID int32 `json:"image_id"`
+}
+
+// ----------------------------------------------
+// Many-to-Many Relationship (Notes & Images) --
+// ----------------------------------------------
+func (q *Queries) GetNoteImage(ctx context.Context, arg GetNoteImageParams) (NotesImage, error) {
+	row := q.db.QueryRow(ctx, getNoteImage, arg.NoteID, arg.ImageID)
+	var i NotesImage
+	err := row.Scan(&i.NoteID, &i.ImageID)
+	return i, err
+}
+
 const getNotesForImage = `-- name: GetNotesForImage :many
 SELECT n.id, n.user_id, n.path, n.content, n.hash, n.created_at, n.updated_at 
 FROM notes n
@@ -188,7 +243,6 @@ func (q *Queries) GetNotesForImage(ctx context.Context, imageID int32) ([]Note, 
 }
 
 const linkImageToNote = `-- name: LinkImageToNote :exec
-
 INSERT INTO notes_images (note_id, image_id) 
 VALUES ($1, $2)
 `
@@ -198,9 +252,6 @@ type LinkImageToNoteParams struct {
 	ImageID int32 `json:"image_id"`
 }
 
-// ----------------------------------------------
-// Many-to-Many Relationship (Notes & Images) --
-// ----------------------------------------------
 func (q *Queries) LinkImageToNote(ctx context.Context, arg LinkImageToNoteParams) error {
 	_, err := q.db.Exec(ctx, linkImageToNote, arg.NoteID, arg.ImageID)
 	return err
@@ -295,4 +346,26 @@ func (q *Queries) UploadImage(ctx context.Context, hash string) (int32, error) {
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const userCanAccessImageByHash = `-- name: UserCanAccessImageByHash :one
+SELECT 1
+FROM notes_images ni
+JOIN notes n ON n.id = ni.note_id
+JOIN images i ON i.id = ni.image_id
+WHERE n.user_id = $1
+  AND i.hash = $2
+LIMIT 1
+`
+
+type UserCanAccessImageByHashParams struct {
+	UserID int32  `json:"user_id"`
+	Hash   string `json:"hash"`
+}
+
+func (q *Queries) UserCanAccessImageByHash(ctx context.Context, arg UserCanAccessImageByHashParams) (int32, error) {
+	row := q.db.QueryRow(ctx, userCanAccessImageByHash, arg.UserID, arg.Hash)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
 }

@@ -22,6 +22,9 @@ RETURNING *;
 -- name: GetNoteByID :one
 SELECT * FROM notes WHERE id = $1;
 
+-- name: GetNoteByPath :many
+SELECT id, path FROM notes WHERE user_id = $1 and path LIKE $2;
+
 -- name: ListNotesByUser :many
 SELECT id, path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC;
 
@@ -47,12 +50,25 @@ SELECT * FROM images WHERE id = $1;
 -- name: GetImageByHash :one
 SELECT * FROM images WHERE hash = $1;
 
+-- name: UserCanAccessImageByHash :one
+SELECT 1
+FROM notes_images ni
+JOIN notes n ON n.id = ni.note_id
+JOIN images i ON i.id = ni.image_id
+WHERE n.user_id = $1
+  AND i.hash = $2
+LIMIT 1;
+
 -- name: DeleteImage :exec
 DELETE FROM images WHERE id = $1;
 
 ------------------------------------------------
 -- Many-to-Many Relationship (Notes & Images) --
 ------------------------------------------------
+
+-- name: GetNoteImage :one
+SELECT * FROM notes_images
+WHERE note_id = $1 AND image_id = $2;
 
 -- name: LinkImageToNote :exec
 INSERT INTO notes_images (note_id, image_id) 

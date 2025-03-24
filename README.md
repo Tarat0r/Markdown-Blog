@@ -59,10 +59,13 @@ curl -X GET http://localhost:8080/notes/{id} \
 
 ```json
 {
-    "path": "file_path/file_name.md",
-    "content": "html_text",
-    "hash": "hash sha256",
-    "updated_at": "time" 
+  "id": 55,
+  "user_id": 2,
+  "path": "test/dir1/note_35.md",
+  "content": "<h1>Markdown-Blog Test</h1>\n<p>This is a test Markdown note for the Markdown-Blog project.</p>\n",
+  "hash": "a39ba3c297f2962cc3de34dffe3aab0f59998d0998c0c822ff1777ad991358ce",
+  "created_at": "2025-03-24T14:23:24.605343Z",
+  "updated_at": "2025-03-24T14:23:24.605343Z"
 }
 ```
 
@@ -115,9 +118,13 @@ curl -X POST http://localhost:8080/notes \
 
 ```json
 {
-    "id": 1,
-    "path": "file_path/file_name.md",
-    "hash": "hash sha256"
+  "markdown_path": "test/dir1/note_1.md",
+  "message": "Upload successful",
+  "note_id": 56,
+  "saved_images": [
+    "fennec.jpg"
+  ],
+  "saved_note": "test.md"
 }
 ```
 
@@ -142,8 +149,10 @@ curl -X PUT http://localhost:8080/notes/{id} \
 
 ```json
 {
-    "path": "file_path/file_name.md",
-    "hash": "hash sha256"
+  "markdown_path": "test/dir1/note.md",
+  "message": "Update successful",
+  "saved_images": null,
+  "saved_note": "note.md"
 }
 ```
 

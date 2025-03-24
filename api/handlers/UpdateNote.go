@@ -37,8 +37,10 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle Image Uploads
-	images := ImageUploadHandler(w, r, req, user_id)
-	if images == nil {
+	images, err := ImageUploadHandler(w, r, req, user_id)
+	if err != nil {
+		log.Println("user:", user_id, "", err)
+		writeJSONError(w, r, err, "Failed to save images", http.StatusInternalServerError)
 		return
 	}
 
@@ -78,6 +80,10 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 
 	note_params.Path = req.Path
 	note_params.UserID = user_id
+	note_params.ID, ok = GetIDFromURI(w, r, user_id)
+	if !ok {
+		return
+	}
 	// Compute SHA-256 Hash of Markdown file
 	note_params.Hash, err = ComputeSHA256Hash(mdFile)
 	if err != nil {
@@ -107,13 +113,12 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the note exists
-	existingNote, err := database.Queries.GetNoteByPath(r.Context(), db.GetNoteByPathParams{Path: note_params.Path, UserID: note_params.UserID})
-	if err != nil {
-		writeJSONError(w, r, err, "Failed to find note", http.StatusInternalServerError)
-		return
-	}
-	if len(existingNote) == 0 {
+	existingNote, err := database.Queries.GetNoteByPathAndID(r.Context(), db.GetNoteByPathAndIDParams{Path: note_params.Path, UserID: note_params.UserID, ID: note_params.ID})
+	if errors.Is(err, sql.ErrNoRows) {
 		writeJSONError(w, r, nil, "Note does not exist", http.StatusBadRequest)
+		return
+	} else if err != nil {
+		writeJSONError(w, r, err, "Failed to find note", http.StatusInternalServerError)
 		return
 	}
 
@@ -129,30 +134,30 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete old image links
-	err = database.Queries.UnlinkOldImagesFromNote(r.Context(), db.UnlinkOldImagesFromNoteParams{NoteID: existingNote[0].ID, Hashes: ImageHashes})
+	err = database.Queries.UnlinkOldImagesFromNote(r.Context(), db.UnlinkOldImagesFromNoteParams{NoteID: existingNote.ID, Hashes: ImageHashes})
 	if err != nil {
 		writeJSONError(w, r, err, "Failed to delete old images", http.StatusInternalServerError)
 		return
 	}
 	// Link note and images
 	for _, img := range images {
-		_, err = database.Queries.GetNoteImage(r.Context(), db.GetNoteImageParams{ImageID: img.Id, NoteID: existingNote[0].ID})
+		_, err = database.Queries.GetNoteImage(r.Context(), db.GetNoteImageParams{ImageID: img.Id, NoteID: existingNote.ID})
 		if err == nil {
 			continue
 		} else if !errors.Is(err, sql.ErrNoRows) {
 			writeJSONError(w, r, err, "Failed to get note, image", http.StatusInternalServerError)
 			return
 		}
-		err := database.Queries.LinkImageToNote(r.Context(), db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote[0].ID})
+		err := database.Queries.LinkImageToNote(r.Context(), db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote.ID})
 		if err != nil {
-			log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote[0].ID})
+			log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote.ID})
 			writeJSONError(w, r, err, "Failed to link note and image", http.StatusInternalServerError)
 			return
 		}
 	}
 
 	// Return JSON Response
-	log.Print("user:", user_id, "", "Update successful")
+	log.Println("user:", user_id, "", "Update successful")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{

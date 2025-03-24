@@ -186,6 +186,32 @@ func (q *Queries) GetNoteByPath(ctx context.Context, arg GetNoteByPathParams) ([
 	return items, nil
 }
 
+const getNoteByPathAndID = `-- name: GetNoteByPathAndID :one
+SELECT id, user_id, path, content, hash, created_at, updated_at FROM notes 
+WHERE user_id = $1 and path = $2 and id = $3
+`
+
+type GetNoteByPathAndIDParams struct {
+	UserID int32  `json:"user_id"`
+	Path   string `json:"path"`
+	ID     int32  `json:"id"`
+}
+
+func (q *Queries) GetNoteByPathAndID(ctx context.Context, arg GetNoteByPathAndIDParams) (Note, error) {
+	row := q.db.QueryRow(ctx, getNoteByPathAndID, arg.UserID, arg.Path, arg.ID)
+	var i Note
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Path,
+		&i.Content,
+		&i.Hash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getNoteImage = `-- name: GetNoteImage :one
 
 SELECT note_id, image_id FROM notes_images
@@ -336,13 +362,14 @@ func (q *Queries) UnlinkOldImagesFromNote(ctx context.Context, arg UnlinkOldImag
 }
 
 const updateNote = `-- name: UpdateNote :exec
-UPDATE notes SET content = $3, hash = $4
-WHERE user_id = $1 and path = $2
+UPDATE notes SET content = $4, hash = $5
+WHERE user_id = $1 and path = $2 and id = $3
 `
 
 type UpdateNoteParams struct {
 	UserID  int32  `json:"user_id"`
 	Path    string `json:"path"`
+	ID      int32  `json:"id"`
 	Content string `json:"content"`
 	Hash    string `json:"hash"`
 }
@@ -351,6 +378,7 @@ func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) error {
 	_, err := q.db.Exec(ctx, updateNote,
 		arg.UserID,
 		arg.Path,
+		arg.ID,
 		arg.Content,
 		arg.Hash,
 	)

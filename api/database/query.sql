@@ -25,12 +25,16 @@ SELECT * FROM notes WHERE id = $1;
 -- name: GetNoteByPath :many
 SELECT id, path FROM notes WHERE user_id = $1 and path LIKE $2;
 
+-- name: GetNoteByPathAndID :one
+SELECT * FROM notes 
+WHERE user_id = $1 and path = $2 and id = $3;
+
 -- name: ListNotesByUser :many
 SELECT id, path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC;
 
 -- name: UpdateNote :exec
-UPDATE notes SET content = $3, hash = $4
-WHERE user_id = $1 and path = $2;
+UPDATE notes SET content = $4, hash = $5
+WHERE user_id = $1 and path = $2 and id = $3;
 
 -- name: DeleteNote :one
 DELETE FROM notes WHERE user_id = $1 and id = $2

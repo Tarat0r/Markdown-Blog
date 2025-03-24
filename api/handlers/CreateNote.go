@@ -25,7 +25,7 @@ import (
 // JSON Metadata Struct
 type UploadRequest struct {
 	Path   string        `json:"path"`
-	Images []ImageUpload `json:"images"`
+	Images []ImageUpload `json:"images,omitempty"`
 }
 
 // ImageUpload Struct
@@ -66,8 +66,10 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle Image Uploads
-	images := ImageUploadHandler(w, r, req, user_id)
-	if images == nil {
+	images, err := ImageUploadHandler(w, r, req, user_id)
+	if err != nil {
+		log.Println("user:", user_id, "", err)
+		writeJSONError(w, r, err, "Failed to save images", http.StatusInternalServerError)
 		return
 	}
 
@@ -170,11 +172,12 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return JSON Response
-	log.Print("user:", user_id, "", "Note created successfully")
+	log.Println("user:", user_id, "", "Note created successfully")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":       "Upload successful",
+		"note_id":       uploadedNote.ID,
 		"markdown_path": note_params.Path,
 		"saved_note":    header.Filename,
 		"saved_images": func() []string {
@@ -236,7 +239,7 @@ func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []by
 				}
 			}
 
-			// 	//Obsidian Links
+			// Obsidian Links
 		case *wikilink.Node:
 			if entering && !rx.MatchString(string(node.Target)) {
 				if node.Embed {
@@ -267,59 +270,55 @@ func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []by
 	// Render the modified AST back into HTML
 	var buf bytes.Buffer
 	if err := gm.Renderer().Render(&buf, md, doc); err != nil {
-		log.Fatal(err)
+		log.Println("user:", userID, "", "Failed to render HTML", " ", err)
+		return "", err
 	}
 	return buf.String(), nil
 }
 
 // ImageUploadHandler handles image uploads
-func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadRequest, user_id int32) []Image {
+func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadRequest, user_id int32) ([]Image, error) {
 	var img Image
 	var images []Image // Slice to hold images
 	var err error
 
-	// log.Print("user:", user_id, "", req)
 	uploadedImages := r.MultipartForm.File["image"]
+
+	// Check if images are uploaded
+	if len(uploadedImages) == 0 {
+		return nil, nil
+	}
 
 	// Check if the number of uploaded images matches the number of image paths in JSON metadata
 	if len(uploadedImages) != len(req.Images) {
-		writeJSONError(w, r, nil, "The number of uploaded images does not match the number of image paths in JSON metadata", http.StatusBadRequest)
-		return nil
+		return nil, errors.New("The number of uploaded images does not match the number of image paths in JSON metadata")
 	}
 
 	for i, path := range req.Images {
 		img.Path = path.Path
 		img.File, err = uploadedImages[i].Open()
 		if err != nil {
-			http.Error(w, "File upload error", http.StatusBadRequest)
-			return nil
+			return nil, errors.New("File upload error")
 		}
 		defer img.File.Close()
 
 		// Check MIME type
 		buffer := make([]byte, 512)
 		if _, err := img.File.Read(buffer); err != nil {
-			log.Println("user:", user_id, "", "Failed to read file", " ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil
+			return nil, errors.New("Failed to read image file")
 		}
 		if _, err := img.File.Seek(0, io.SeekStart); err != nil {
-			log.Println("user:", user_id, "", "Failed to reset file pointer", " ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil
+			return nil, errors.New("Failed to reset file pointer")
 		}
 		mimeType := http.DetectContentType(buffer)
 		if !strings.HasPrefix(mimeType, "image/") {
-			writeJSONError(w, r, err, "Invalid image file type", http.StatusBadRequest)
-			return nil
+			return nil, errors.New("Invalid image file type")
 		}
 
 		// Compute hash of image file
 		img.Hash, err = ComputeSHA256Hash(img.File)
 		if err != nil {
-			log.Println("user:", user_id, "", "Failed to compute image file hash", " ", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return nil
+			return nil, errors.New("Failed to compute image file hash")
 		}
 
 		//Check if image already exists
@@ -333,39 +332,32 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 				// Re-open the file to read it again from start
 				imgReader, err := uploadedImages[i].Open()
 				if err != nil {
-					writeJSONError(w, r, err, "Failed to re-open image", http.StatusInternalServerError)
-					return nil
+					return nil, errors.New("Failed to re-open image")
 				}
 				defer imgReader.Close()
 
 				outFile, err := os.Create(savePath)
 				if err != nil {
-					writeJSONError(w, r, err, "Failed to save image", http.StatusInternalServerError)
-					return nil
+					return nil, errors.New("Failed to save image")
 				}
 				defer outFile.Close()
 
 				_, err = io.Copy(outFile, imgReader)
 				if err != nil {
-					writeJSONError(w, r, err, "Failed to write image to file", http.StatusInternalServerError)
-					return nil
+					return nil, errors.New("Failed to write image to file")
 				}
 
 				// Add to database
 				img.Id, err = database.Queries.UploadImage(r.Context(), img.Hash)
 				if err != nil {
-					log.Println("user:", user_id, "", "Failed to save image to database", " ", err)
-					w.WriteHeader(http.StatusInternalServerError)
-					return nil
+					return nil, errors.New("Failed to save image to database")
 				}
 				log.Println("user:", user_id, "", "Image saved to:", savePath)
 			} else {
-				log.Println("user:", user_id, "", "Failed to get hash from database", " ", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return nil
+				return nil, errors.New("Failed to get hash from database")
 			}
 		}
 		images = append(images, img)
 	}
-	return images
+	return images, nil
 }

@@ -44,7 +44,7 @@ func GetIDFromURI(w http.ResponseWriter, r *http.Request, user_id int32) (int32,
 	}
 
 	note_id := int32(note_id_int)
-	log.Println("UserID:", user_id, ", NoteID:", note_id)
+	log.Println("user:", user_id, " note:", note_id)
 
 	_, err = database.Queries.GetNoteByID(context.Background(), note_id)
 	if err != nil {

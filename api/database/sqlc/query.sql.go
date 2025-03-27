@@ -314,13 +314,19 @@ func (q *Queries) ListNotesByUser(ctx context.Context, userID int32) ([]ListNote
 }
 
 const setTestToken = `-- name: SetTestToken :exec
-INSERT INTO users (api_token)
-VALUES ($1)
-ON CONFLICT (api_token) DO NOTHING
+INSERT INTO users (api_token, name, email)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING
 `
 
-func (q *Queries) SetTestToken(ctx context.Context, apiToken string) error {
-	_, err := q.db.Exec(ctx, setTestToken, apiToken)
+type SetTestTokenParams struct {
+	ApiToken string `json:"api_token"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+}
+
+func (q *Queries) SetTestToken(ctx context.Context, arg SetTestTokenParams) error {
+	_, err := q.db.Exec(ctx, setTestToken, arg.ApiToken, arg.Name, arg.Email)
 	return err
 }
 

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/Tarat0r/Markdown-Blog/database"
+	db "github.com/Tarat0r/Markdown-Blog/database/sqlc"
 	"github.com/Tarat0r/Markdown-Blog/handlers"
 	"github.com/Tarat0r/Markdown-Blog/middleware"
 )
@@ -40,8 +42,10 @@ func TestMain(m *testing.M) {
 	defer database.CloseDB()
 
 	//Add test token to the database
-	_ = database.Queries.SetTestToken(context.Background(), os.Getenv("AUTHORIZATION"))
-
+	err := database.Queries.SetTestToken(context.Background(), db.SetTestTokenParams{ApiToken: os.Getenv("AUTHORIZATION"), Name: "TEST", Email: "test@test.com"})
+	if err != nil {
+		log.Fatalf("Failed to set test token: %v", err)
+	}
 	// Run the tests
 	m.Run()
 }
@@ -59,6 +63,7 @@ func TestListNotesHandler(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
+		log.Println(rr)
 		t.Errorf("ListNotes returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}
 }
@@ -104,6 +109,7 @@ func TestCreateNote_NoImages(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
+		log.Println(rr)
 		t.Fatalf("CreateNote returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}
 
@@ -195,6 +201,7 @@ func TestUpdateNote_NoImages(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
+		log.Println(rr)
 		t.Fatalf("UpdateNote returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}
 
@@ -255,6 +262,7 @@ func TestDeleteNoteHandler_All(t *testing.T) {
 
 	expectedMessage := "Note deleted successfully"
 	if result["message"] != expectedMessage {
+		log.Println(rr)
 		t.Errorf("unexpected message: got %v want %v", result["message"], expectedMessage)
 	}
 }

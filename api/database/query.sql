@@ -11,9 +11,9 @@ SELECT id FROM users
 WHERE api_token = $1;
 
 -- name: SetTestToken :exec
-INSERT INTO users (api_token)
-VALUES ($1)
-ON CONFLICT (api_token) DO NOTHING;
+INSERT INTO users (api_token, name, email)
+VALUES ($1, $2, $3)
+ON CONFLICT DO NOTHING;
 
 -------------------
 -- Notes Queries --

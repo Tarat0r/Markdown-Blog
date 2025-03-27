@@ -31,6 +31,10 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	// Extract JSON metadata
 	var req UploadRequest
 	metadata := r.FormValue("metadata")
+	if metadata == "" {
+		writeJSONError(w, r, nil, "Metadata is required", http.StatusBadRequest)
+		return
+	}
 	if err := json.Unmarshal([]byte(metadata), &req); err != nil {
 		writeJSONError(w, r, err, "Invalid JSON metadata", http.StatusBadRequest)
 		return
@@ -65,6 +69,8 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	// Reset file pointer immediately after reading the buffer
 	if _, err := mdFile.Seek(0, io.SeekStart); err != nil {
 		log.Println("user:", user_id, "", "Failed to reset file pointer", " ", err)
 		w.WriteHeader(http.StatusInternalServerError)

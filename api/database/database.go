@@ -48,3 +48,25 @@ func CloseDB() {
 	DBPool.Close()
 	log.Println("Database connection pool closed")
 }
+
+// RunMigrations executes the SQL file to set up the database schema
+func RunMigrations() {
+	filePath := "../database/markdown_blog.sql" // Path to the SQL file
+	sqlFile, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatalf("Failed to read SQL file: %v", err)
+	}
+
+	conn, err := DBPool.Acquire(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to acquire database connection: %v", err)
+	}
+	defer conn.Release()
+
+	_, err = conn.Exec(context.Background(), string(sqlFile))
+	if err != nil {
+		log.Fatalf("Failed to execute migrations: %v", err)
+	}
+
+	log.Println("Database migrations executed successfully!")
+}

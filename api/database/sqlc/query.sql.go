@@ -313,6 +313,17 @@ func (q *Queries) ListNotesByUser(ctx context.Context, userID int32) ([]ListNote
 	return items, nil
 }
 
+const setTestToken = `-- name: SetTestToken :exec
+INSERT INTO users (api_token)
+VALUES ($1)
+ON CONFLICT (api_token) DO NOTHING
+`
+
+func (q *Queries) SetTestToken(ctx context.Context, apiToken string) error {
+	_, err := q.db.Exec(ctx, setTestToken, apiToken)
+	return err
+}
+
 const tokenExists = `-- name: TokenExists :one
 
 SELECT COUNT(*) FROM users

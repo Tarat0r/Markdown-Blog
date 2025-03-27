@@ -10,6 +10,11 @@ WHERE api_token = $1;
 SELECT id FROM users
 WHERE api_token = $1;
 
+-- name: SetTestToken :exec
+INSERT INTO users (api_token)
+VALUES ($1)
+ON CONFLICT (api_token) DO NOTHING;
+
 -------------------
 -- Notes Queries --
 -------------------

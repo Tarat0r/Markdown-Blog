@@ -6,10 +6,10 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -20,21 +20,27 @@ import (
 	"github.com/Tarat0r/Markdown-Blog/database"
 	"github.com/Tarat0r/Markdown-Blog/handlers"
 	"github.com/Tarat0r/Markdown-Blog/middleware"
-	"github.com/joho/godotenv"
 )
 
 var testNoteID string
 
 func TestMain(m *testing.M) {
 	// Load environment variables from .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatalf("Error loading .env file: %v", err)
+	// }
+
+	if os.Getenv("DATABASE_URL") == "" {
+		os.Setenv("DATABASE_URL", os.Getenv("DATABASE_URL"))
 	}
 
 	// Initialize the database connection
 	database.ConnectDB()
 	defer database.CloseDB()
+
+	//Add test token to the database
+	_ = database.Queries.SetTestToken(context.Background(), os.Getenv("AUTHORIZATION"))
 
 	// Run the tests
 	m.Run()

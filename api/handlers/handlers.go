@@ -20,9 +20,24 @@ type ErrorResponse struct {
 }
 
 // Helper function to return JSON errors
+// writeJSONError sends a JSON error response to the client.
+// Parameters:
+// - w: The HTTP response writer used to send the response.
+// - r: The HTTP request object containing context and other details.
+// - err: The error object to log for debugging purposes.
+// - message: A user-friendly error message to include in the response.
+// - statusCode: The HTTP status code to set for the response.
 func writeJSONError(w http.ResponseWriter, r *http.Request, err error, message string, statusCode int) {
-	user_id := r.Context().Value("user_id").(int32)
-	log.Println("user:", user_id, "", message, " ", err)
+	userIDValue := r.Context().Value("user_id")
+	user_id, ok := userIDValue.(int32)
+	if !ok {
+		log.Println("Error: user_id not found or invalid type in context")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Internal server error"})
+		return
+	}
+	log.Printf("user: %d, message: %s, error: %v", user_id, message, err)
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
@@ -55,7 +70,12 @@ func GetIDFromURI(w http.ResponseWriter, r *http.Request, user_id int32) (int32,
 	return note_id, true
 }
 
-// ComputeSHA256Hash generates a SHA-256 hash of a file
+// ComputeSHA256Hash generates a SHA-256 hash of a file.
+// Parameters:
+// - file: The multipart.File object representing the file to hash.
+// Returns:
+// - A string containing the hexadecimal representation of the SHA-256 hash.
+// - An error if there is an issue reading the file or computing the hash.
 func ComputeSHA256Hash(file multipart.File) (string, error) {
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Tarat0r/Markdown-Blog/handlers"
 	"github.com/Tarat0r/Markdown-Blog/middleware"
@@ -17,7 +17,10 @@ func main() {
 	database.ConnectDB()
 	defer database.CloseDB() // Close connection pool on exit
 
-	// Define your middleware chain
+	// Run database migrations
+	database.RunMigrations()
+
+	// Define middleware chain
 	middlewareChain := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)
 
 	http.HandleFunc("GET /notes", middlewareChain(handlers.ListNotes))
@@ -30,11 +33,12 @@ func main() {
 
 	http.HandleFunc("DELETE /notes/{NoteID}", middlewareChain(handlers.DeleteNote))
 
-	// fs := http.FileServer(http.Dir("frontend/static/"))
-	// http.Handle("/static/", http.StripPrefix("/static/", fs))
-
-	fmt.Println("Server is working on http://localhost:8080")
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	host_address := os.Getenv("HOST_ADDRESS")
+	if host_address == "" {
+		host_address = "localhost:8080"
+	}
+	log.Println("Server is working on http://" + host_address)
+	log.Fatal(http.ListenAndServe(host_address, nil))
 }
 
 // Middleware type definition

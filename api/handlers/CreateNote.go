@@ -217,7 +217,7 @@ func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []by
 	doc := gm.Parser().Parse(reader)
 
 	// Call the separate function to modify AST
-	// modifyAST(doc)
+	// modifyAST(doc) // Placeholder for future AST modifications, currently not in use.
 
 	imageCount := 0
 	rx := regexp.MustCompile(`(?i)^https?://[^\s/$.?#].[^\s]*$`)
@@ -229,10 +229,14 @@ func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []by
 				oldSrc := string(node.Destination)
 				if !rx.MatchString(oldSrc) {
 					if imageCount >= len(img) {
-						return ast.WalkStop, errors.New("Image count does not match")
+						return ast.WalkStop, errors.New("Image count mismatch: number of images in metadata does not match the number of uploaded files")
 					}
 
-					newSrc := os.Getenv("STATIC_PATH") + "/" + img[imageCount].Hash
+					staticPath := os.Getenv("STATIC_PATH")
+					if staticPath == "" {
+						return ast.WalkStop, errors.New("STATIC_PATH environment variable is not set")
+					}
+					newSrc := staticPath + "/" + img[imageCount].Hash
 
 					node.Destination = []byte(newSrc)
 					imageCount++

@@ -5,10 +5,10 @@ import re
 import requests
 
 # Настройки скрипта
-DIRECTORY = "C:/Users/Kevin/Downloads/Markdown-Blog-main/test"  # Директория с Markdown-файлами
+DIRECTORY = "C:/Users/Kevin/Downloads/Markdown-Blog-main/Markdown-Blog/test"  # Директория с Markdown-файлами
 SERVER_URL = "http://localhost:8080"  # URL API сервера
 STATE_FILE = "file_state.json"  # Файл для хранения состояния
-API_TOKEN = "5wIL3SKYSWFXXrQgrQnhQr1mFmEz4XTmmGbj1ZnyYK2fPqX0Pu4PahmElDfaptIP"  # Токен API
+API_TOKEN = "xFRFXi9fn3xwsOS8di8abUfouKJs6HqrrdejCkW1cvTm9XiCo6B49YeZL9HvHvdK"  # Токен API
 
 
 def get_string_hash(content):
@@ -45,8 +45,10 @@ def scan_directory():
 
 def get_uploaded_files():
     """Запрашивает у сервера список уже загруженных файлов."""
-    headers = {"API_TOKEN_FORMAT": API_TOKEN}
+    headers = {"Authorization": API_TOKEN}
     response = requests.get(f"{SERVER_URL}/notes", headers=headers)
+    print(response.text)
+
     return response.json() if response.status_code == 200 else []
 
 
@@ -71,45 +73,45 @@ def replace_links(content, file_dir):
 
 def update_file(note_id, path, content):
     """Обновляет существующую заметку на сервере."""
-    headers = {"API_TOKEN_FORMAT": API_TOKEN, "Content-Type": "application/json"}
+    headers = {"Authorization": API_TOKEN, "Content-Type": "application/json"}
     data = json.dumps({"path": path, "content": content})
     response = requests.put(f"{SERVER_URL}/notes/{note_id}", headers=headers, data=data)
     if response.status_code == 200:
         print(f"Updated: {path}")
     else:
-        print(f"Failed to update {path}: {response.text}")
+        print(f"Failed to update {path}: ({response.status_code}) {response.text}")
 
 
 def delete_file(note_id, path):
     """Удаляет файл с сервера."""
-    headers = {"API_TOKEN_FORMAT": API_TOKEN}
+    headers = {"Authorization": API_TOKEN}
     response = requests.delete(f"{SERVER_URL}/notes/{note_id}", headers=headers)
     if response.status_code == 200:
         print(f"Deleted: {path}")
     else:
-        print(f"Failed to delete {path}: {response.text}")
+        print(f"Failed to delete {path}: ({response.status_code}) {response.text}")
 
 
 def upload_file(path, content):
     """Загружает новый файл на сервер."""
     metadata = json.dumps({"path": path, "images": []})
-    headers = {"API_TOKEN_FORMAT": API_TOKEN}
+    headers = {"Authorization": API_TOKEN}
     files = {
         "metadata": (None, metadata, "application/json"),
-        "markdown": (os.path.basename(path), content, "text/markdown")
+        "markdown": (os.path.basename(path), content, "text/plain")
     }
     response = requests.post(f"{SERVER_URL}/notes", headers=headers, files=files)
-    if response.status_code == 201:
-        print(f"Uploaded: {path}")
+    if response.status_code == 200:
+        print(f"Uploaded: {path} {response.text}")
     else:
-        print(f"Failed to upload {path}: {response.text}")
+        print(f"Failed to upload {path}: ({response.status_code}) {response.text}")
 
 
 def sync_files():
     """Синхронизирует файлы с сервером."""
-    previous_state = load_previous_state()
+    previous_state = {} #load_previous_state()
     current_state = scan_directory()
-    uploaded_files = {note["path"]: (note["id"], note["hash"]) for note in get_uploaded_files()}
+    uploaded_files = {}#{note["path"]: (note["id"], note["hash"]) for note in get_uploaded_files()}
 
     for path, data in current_state.items():
         filename = os.path.basename(path)
@@ -123,7 +125,7 @@ def sync_files():
             note_id, server_hash = uploaded_files[path]
             if server_hash != content_hash:
                 print(f"Updating file: {filename}")
-                update_file(note_id, path, modified_content)
+                #update_file(note_id, path, modified_content)
         else:
             print(f"Uploading new file: {filename}")
             upload_file(path, modified_content)

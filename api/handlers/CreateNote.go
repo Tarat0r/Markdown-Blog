@@ -89,7 +89,8 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 
 	// Check MIME type of Markdown file
 	buffer := make([]byte, 512)
-	if _, err := mdFile.Read(buffer); err != nil {
+	n, err := mdFile.Read(buffer)
+	if err != nil {
 		log.Println("user:", user_id, "", "Failed to read file", " ", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -100,7 +101,12 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mimeType := http.DetectContentType(buffer)
-	if !strings.HasPrefix(mimeType, "text/plain") {
+
+	isValidMarkdown := strings.HasPrefix(mimeType, "text/plain") ||
+		(mimeType == "application/octet-stream" && n < 512)
+
+	if !isValidMarkdown {
+		log.Println("user:", user_id, "", strings.TrimSpace(mimeType), " ", header.Filename)
 		writeJSONError(w, r, nil, "Invalid markdown file type", http.StatusBadRequest)
 		return
 	}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заметки</title>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch("/api/notes")
+                .then(response => response.json())
+                .then(notes => {
+                    const container = document.getElementById("notes");
+                    notes.forEach(note => {
+                        let noteDiv = document.createElement("div");
+                        noteDiv.id = `note-${note.id}`;
+                        noteDiv.innerHTML = `<p>Загрузка...</p>`;
+                        container.appendChild(noteDiv);
+
+                        fetch(`/api/note/${note.id}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                noteDiv.innerHTML = `<div>${data.content}</div>`;
+                            });
+                    });
+                });
+        });
+    </script>
+</head>
+<body>
+    <h1>Заметки</h1>
+    <div id="notes"></div>
+</body>
+</html>

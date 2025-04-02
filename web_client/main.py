@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 # Настройки скрипта
-SERVER_URL = os.getenv("SERVER_URL")  # URL API сервера
-API_TOKEN = os.getenv("API_TOKEN")  # Токен API
+SERVER_URL = os.environ.get("SERVER_URL")  # URL API сервера
+API_TOKEN = os.environ.get("API_TOKEN")  # Токен API
 
 app = Flask(__name__)
 

@@ -3,17 +3,15 @@ import hashlib
 import json
 import re
 import requests
-import io
 import glob
-from dotenv import load_dotenv
 
 
-load_dotenv()
+
 # Настройки скрипта
-DIRECTORY = os.getenv("DIRECTORY")
-SERVER_URL = os.getenv("SERVER_URL")  # URL API сервера
-STATE_FILE = os.getenv("STATE_FILE")  # Файл для хранения состояния
-API_TOKEN = os.getenv("API_TOKEN")  # Токен API
+DIRECTORY = os.environ.get("DIRECTORY")
+SERVER_URL = os.environ.get("SERVER_URL")  # URL API сервера
+STATE_FILE = os.environ.get("STATE_FILE")  # Файл для хранения состояния
+API_TOKEN = os.environ.get("API_TOKEN")  # Токен API
 
 
 

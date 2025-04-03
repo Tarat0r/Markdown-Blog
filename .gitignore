@@ -4,3 +4,4 @@ test/*
 api/static/*
 api/images/*
 .secrets
+.idea/*

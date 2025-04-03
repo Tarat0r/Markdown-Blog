@@ -63,11 +63,11 @@ jobs:
 
       - name: Start Note Sync Service
         working-directory: ./pc_client
-        run: nohup python sync.py &
+        run: nohup python main.py &
 
       - name: Start Web Service
         working-directory: ./web_client
-        run: nohup python app.py &
+        run: nohup python main.py &
 
   test:
     name: Test

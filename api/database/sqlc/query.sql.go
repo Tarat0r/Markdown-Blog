@@ -13,7 +13,7 @@ const createNote = `-- name: CreateNote :one
 
 INSERT INTO notes (user_id, path, content, hash) 
 VALUES ($1, $2, $3, $4) 
-RETURNING id, user_id, path, content, hash, created_at, updated_at
+RETURNING id, user_id, path, content, content_md, hash, created_at, updated_at
 `
 
 type CreateNoteParams struct {
@@ -39,6 +39,7 @@ func (q *Queries) CreateNote(ctx context.Context, arg CreateNoteParams) (Note, e
 		&i.UserID,
 		&i.Path,
 		&i.Content,
+		&i.ContentMd,
 		&i.Hash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -134,7 +135,7 @@ func (q *Queries) GetImagesForNote(ctx context.Context, noteID int32) ([]Image, 
 }
 
 const getNoteByID = `-- name: GetNoteByID :one
-SELECT id, user_id, path, content, hash, created_at, updated_at FROM notes WHERE id = $1
+SELECT id, user_id, path, content, content_md, hash, created_at, updated_at FROM notes WHERE id = $1
 `
 
 func (q *Queries) GetNoteByID(ctx context.Context, id int32) (Note, error) {
@@ -145,6 +146,7 @@ func (q *Queries) GetNoteByID(ctx context.Context, id int32) (Note, error) {
 		&i.UserID,
 		&i.Path,
 		&i.Content,
+		&i.ContentMd,
 		&i.Hash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -187,7 +189,7 @@ func (q *Queries) GetNoteByPath(ctx context.Context, arg GetNoteByPathParams) ([
 }
 
 const getNoteByPathAndID = `-- name: GetNoteByPathAndID :one
-SELECT id, user_id, path, content, hash, created_at, updated_at FROM notes 
+SELECT id, user_id, path, content, content_md, hash, created_at, updated_at FROM notes 
 WHERE user_id = $1 and path = $2 and id = $3
 `
 
@@ -205,6 +207,7 @@ func (q *Queries) GetNoteByPathAndID(ctx context.Context, arg GetNoteByPathAndID
 		&i.UserID,
 		&i.Path,
 		&i.Content,
+		&i.ContentMd,
 		&i.Hash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -234,7 +237,7 @@ func (q *Queries) GetNoteImage(ctx context.Context, arg GetNoteImageParams) (Not
 }
 
 const getNotesForImage = `-- name: GetNotesForImage :many
-SELECT n.id, n.user_id, n.path, n.content, n.hash, n.created_at, n.updated_at 
+SELECT n.id, n.user_id, n.path, n.content, n.content_md, n.hash, n.created_at, n.updated_at 
 FROM notes n
 JOIN notes_images ni ON n.id = ni.note_id
 WHERE ni.image_id = $1
@@ -254,6 +257,7 @@ func (q *Queries) GetNotesForImage(ctx context.Context, imageID int32) ([]Note, 
 			&i.UserID,
 			&i.Path,
 			&i.Content,
+			&i.ContentMd,
 			&i.Hash,
 			&i.CreatedAt,
 			&i.UpdatedAt,

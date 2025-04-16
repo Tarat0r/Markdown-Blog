@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.notes (
     user_id integer NOT NULL,
     path character varying(255) COLLATE pg_catalog."default" NOT NULL,
     content text COLLATE pg_catalog."default" NOT NULL,
+    content_md text COLLATE pg_catalog."default" NOT NULL,
     hash text COLLATE pg_catalog."default" NOT NULL,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now(),

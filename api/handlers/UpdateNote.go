@@ -114,6 +114,7 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	note_params.ContentMd = string(mdContent)
 
 	note_params.Content, err = MarkdownToHTML(w, r, images, mdContent, note_params.Path, user_id)
 	if err != nil {
@@ -124,7 +125,7 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	// Check if the note exists
 	existingNote, err := database.Queries.GetNoteByPathAndID(r.Context(), db.GetNoteByPathAndIDParams{Path: note_params.Path, UserID: note_params.UserID, ID: note_params.ID})
 	if errors.Is(err, sql.ErrNoRows) {
-		writeJSONError(w, r, nil, "Note does not exist", http.StatusBadRequest)
+		writeJSONError(w, r, errors.New("Note does not exist"), "Note does not exist", http.StatusBadRequest)
 		return
 	} else if err != nil {
 		writeJSONError(w, r, err, "Failed to find note", http.StatusInternalServerError)

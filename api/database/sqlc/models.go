@@ -19,6 +19,7 @@ type Note struct {
 	UserID    int32            `json:"user_id"`
 	Path      string           `json:"path"`
 	Content   string           `json:"content"`
+	ContentMd string           `json:"content_md"`
 	Hash      string           `json:"hash"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`

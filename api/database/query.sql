@@ -20,8 +20,8 @@ ON CONFLICT DO NOTHING;
 -------------------
 
 -- name: CreateNote :one
-INSERT INTO notes (user_id, path, content, hash) 
-VALUES ($1, $2, $3, $4) 
+INSERT INTO notes (user_id, path, content, content_md, hash) 
+VALUES ($1, $2, $3, $4, $5) 
 RETURNING *;
 
 -- name: GetNoteByID :one
@@ -38,7 +38,7 @@ WHERE user_id = $1 and path = $2 and id = $3;
 SELECT id, path, hash FROM notes WHERE user_id = $1 ORDER BY created_at DESC;
 
 -- name: UpdateNote :exec
-UPDATE notes SET content = $4, hash = $5
+UPDATE notes SET content = $4, hash = $5, content_md = $6
 WHERE user_id = $1 and path = $2 and id = $3;
 
 -- name: DeleteNote :one

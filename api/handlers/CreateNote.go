@@ -136,6 +136,7 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	note_params.ContentMd = string(mdContent)
 
 	note_params.Content, err = MarkdownToHTML(w, r, images, mdContent, note_params.Path, user_id)
 	if err != nil {
@@ -149,7 +150,7 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(notesByPath) > 0 {
-		writeJSONError(w, r, nil, "Note already exists", http.StatusBadRequest)
+		writeJSONError(w, r, errors.New("Note already exists"), "Note already exists", http.StatusBadRequest)
 		return
 	}
 

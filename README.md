@@ -53,6 +53,7 @@ curl -X GET http://localhost:8080/notes \
 ```bash
 curl -X GET http://localhost:8080/notes/{id} \
      -H "API_TOKEN_FORMAT: ^[a-zA-Z0-9]{64}$" \
+     -H "MD_CONTENT: false"
 ```
 
 #### Response
@@ -63,6 +64,7 @@ curl -X GET http://localhost:8080/notes/{id} \
   "user_id": 2,
   "path": "test/dir1/note_35.md",
   "content": "<h1>Markdown-Blog Test</h1>\n<p>This is a test Markdown note for the Markdown-Blog project.</p>\n",
+  "content_md": "Markdown content"
   "hash": "a39ba3c297f2962cc3de34dffe3aab0f59998d0998c0c822ff1777ad991358ce",
   "created_at": "2025-03-24T14:23:24.605343Z",
   "updated_at": "2025-03-24T14:23:24.605343Z"
@@ -181,7 +183,7 @@ curl -X DELETE http://localhost:8080/notes/{id} \
 ## TODO
 
 - [x] GET /notes
-- [x] GET /notes/{id}
+- [ ] GET /notes/{id}
 - [x] GET /images/{hash}
 - [x] POST /notes
 - [x] PUT /notes/{id}

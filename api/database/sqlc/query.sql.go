@@ -11,16 +11,17 @@ import (
 
 const createNote = `-- name: CreateNote :one
 
-INSERT INTO notes (user_id, path, content, hash) 
-VALUES ($1, $2, $3, $4) 
+INSERT INTO notes (user_id, path, content, content_md, hash) 
+VALUES ($1, $2, $3, $4, $5) 
 RETURNING id, user_id, path, content, content_md, hash, created_at, updated_at
 `
 
 type CreateNoteParams struct {
-	UserID  int32  `json:"user_id"`
-	Path    string `json:"path"`
-	Content string `json:"content"`
-	Hash    string `json:"hash"`
+	UserID    int32  `json:"user_id"`
+	Path      string `json:"path"`
+	Content   string `json:"content"`
+	ContentMd string `json:"content_md"`
+	Hash      string `json:"hash"`
 }
 
 // -----------------
@@ -31,6 +32,7 @@ func (q *Queries) CreateNote(ctx context.Context, arg CreateNoteParams) (Note, e
 		arg.UserID,
 		arg.Path,
 		arg.Content,
+		arg.ContentMd,
 		arg.Hash,
 	)
 	var i Note
@@ -383,16 +385,17 @@ func (q *Queries) UnlinkOldImagesFromNote(ctx context.Context, arg UnlinkOldImag
 }
 
 const updateNote = `-- name: UpdateNote :exec
-UPDATE notes SET content = $4, hash = $5
+UPDATE notes SET content = $4, hash = $5, content_md = $6
 WHERE user_id = $1 and path = $2 and id = $3
 `
 
 type UpdateNoteParams struct {
-	UserID  int32  `json:"user_id"`
-	Path    string `json:"path"`
-	ID      int32  `json:"id"`
-	Content string `json:"content"`
-	Hash    string `json:"hash"`
+	UserID    int32  `json:"user_id"`
+	Path      string `json:"path"`
+	ID        int32  `json:"id"`
+	Content   string `json:"content"`
+	Hash      string `json:"hash"`
+	ContentMd string `json:"content_md"`
 }
 
 func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) error {
@@ -402,6 +405,7 @@ func (q *Queries) UpdateNote(ctx context.Context, arg UpdateNoteParams) error {
 		arg.ID,
 		arg.Content,
 		arg.Hash,
+		arg.ContentMd,
 	)
 	return err
 }

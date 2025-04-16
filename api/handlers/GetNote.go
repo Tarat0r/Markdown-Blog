@@ -40,8 +40,8 @@ func GetNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	noteResponse := NoteResponse{
-		ID:        int(note.ID),
-		UserID:    int(note.UserID),
+		ID: int(note.ID),
+		// UserID:    int(note.UserID),
 		Path:      string(note.Path),
 		Content:   string(note.Content),
 		Hash:      string(note.Hash),

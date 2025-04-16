@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head>
+    <title>Редактировать заметку</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Редактировать заметку</h1>
+    <form method="post">
+        <input name="title" value="{{ note.path.split('/')[-1].replace('.md', '') }}" required><br>
+        <textarea name="content" rows="10" cols="50">{{ note.content_md }}</textarea><br>
+        <button type="submit">Сохранить</button>
+    </form>
+    <a href="{{ url_for('index') }}">Назад</a>
+</body>
+</html>

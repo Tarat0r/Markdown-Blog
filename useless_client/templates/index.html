@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+    <title>Заметки</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Список заметок</h1>
+    <a href="{{ url_for('add_note') }}">Добавить новую заметку</a>
+    <ul>
+    {% for note in notes %}
+        <li>
+            <a href="{{ url_for('view_note', note_id=note.id) }}">{{ note.path }}</a>
+            <a href="{{ url_for('edit_note', note_id=note.id) }}">Изменить</a>
+            <form method="post" action="{{ url_for('delete_note', note_id=note.id) }}" style="display:inline;">
+                <button type="submit">Удалить</button>
+            </form>
+
+        </li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

@@ -136,7 +136,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install dependencies for Web Service
-        working-directory: ./web_client
+        working-directory: ./useless_client
         run: |
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
           echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
@@ -149,5 +149,5 @@ jobs:
 
       - name: Run tests for Web Service
         run: |
-          python -m unittest web_client/tests/test.py
+          python -m unittest useless_client/tests/test_app.py
 

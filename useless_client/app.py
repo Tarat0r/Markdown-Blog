@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 # Настройки скрипта
-API_URL = os.getenv("SERVER_URL")+"/notes"  # URL API сервера
+API_URL = os.getenv("SERVER_URL", "http://localhost:8080")+"/notes"  # URL API сервера
 API_TOKEN = os.getenv("API_TOKEN")  # Токен API
 
 app = Flask(__name__)
@@ -109,4 +109,4 @@ def delete_note(note_id):
 
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(port=5050, debug=True)

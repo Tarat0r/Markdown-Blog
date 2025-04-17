@@ -85,10 +85,12 @@ def update_file(note_id, path, content, images):
 
     metadata = json.dumps({"path": path, "images": images})
     headers = {"Authorization": API_TOKEN}
-    files = {
-        "metadata": (None, metadata, "application/json"),
-        "markdown": (path, content, "text/plain")
-    }
+    files = [
+        ("metadata", (None, metadata, "application/json")),
+        ("markdown", (path, content, "text/plain"))
+    ]
+    for image_path in images:
+        files.append(("image",(image_path, open(image_path,'rb'),"image/jpeg")))
     response = requests.put(f"{SERVER_URL}/notes/{note_id}", headers=headers, files=files)
 
     if response.status_code == 200:

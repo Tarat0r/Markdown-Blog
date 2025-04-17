@@ -4,10 +4,10 @@ services:
     container_name: local_pgdb
     restart: always
     ports:
-      - "${PG_PORT}:5432"
+      - "5432:5432"
     environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - md_blog_db:/var/lib/postgresql/data
     env_file:

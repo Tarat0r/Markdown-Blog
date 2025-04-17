@@ -10,7 +10,7 @@ class AppTestCase(unittest.TestCase):
         self.client = app.test_client()
         self.api_token = "a" * 64  # Пример валидного токена
 
-    @patch("app.requests.get")
+    @patch("useless_client.app.requests.get")
     def test_index_page(self, mock_get):
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = [
@@ -23,7 +23,7 @@ class AppTestCase(unittest.TestCase):
         self.assertIn(b"notes/note1.md", response.data)
         self.assertIn(b"notes/note2.md", response.data)
 
-    @patch("app.requests.get")
+    @patch("useless_client.app.requests.get")
     def test_edit_page(self, mock_get):
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {
@@ -37,7 +37,7 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Title", response.data)
 
-    @patch("app.requests.post")
+    @patch("useless_client.app.requests.post")
     def test_add_note(self, mock_post):
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {"message": "Upload successful"}
@@ -55,7 +55,7 @@ class AppTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
 
-    @patch("app.requests.delete")
+    @patch("useless_client.app.requests.delete")
     def test_delete_note(self, mock_delete):
         mock_delete.return_value.status_code = 200
         mock_delete.return_value.json.return_value = {"path": "notes/test.md"}

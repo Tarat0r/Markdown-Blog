@@ -7,7 +7,8 @@
 <body>
     <h1>Редактировать заметку</h1>
     <form method="post">
-        <input name="title" value="{{ note.path.split('/')[-1].replace('.md', '') }}" required><br>
+        <input type = "hidden" name="title" value="{{ note.path.split('/')[-1].replace('.md', '') }}" required><br>
+        <label>{{ note.path.split('/')[-1].replace('.md', '') }}</label>
         <textarea name="content" rows="10" cols="50">{{ note.content_md }}</textarea><br>
         <button type="submit">Сохранить</button>
     </form>

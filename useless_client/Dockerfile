@@ -5,7 +5,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Копируем файлы проекта в контейнер
-COPY . /app
+COPY useless_client/  /app
 
 # Устанавливаем зависимости
 RUN pip install --no-cache-dir -r requirements.txt

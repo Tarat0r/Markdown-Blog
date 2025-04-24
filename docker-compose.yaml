@@ -35,24 +35,6 @@ services:
     env_file:
       - .env
 
-  # Web Client (Python/Flask)
-  web_client:
-    build:
-      context: .
-      dockerfile: web_client/Dockerfile
-    # image: web_client/latest
-    container_name: markdown_blog_web_client
-    environment:
-      - API_URL=http://markdown_blog_api:8080
-    ports:
-      - "5000:5000"
-    depends_on:
-      - api
-    networks:
-      - markdown_blog_network
-    env_file:
-      - .env
-
   # Useless Client (Python/Flask)
   useless_client:
     build:

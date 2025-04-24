@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import requests
 import os
 from dotenv import load_dotenv
@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 # Настройки скрипта
-API_URL = os.getenv("SERVER_URL", "http://localhost:8080")+"/notes"  # URL API сервера
+API_URL = os.getenv("SERVER_URL", "http://localhost:8080")  # URL API сервера
 API_TOKEN = os.getenv("API_TOKEN")  # Токен API
 
 app = Flask(__name__)
@@ -18,6 +18,40 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 headers = {
     "Authorization": API_TOKEN
 }
+
+
+
+@app.route("/")
+def index():
+    """Главная страница, загружающая пустой шаблон"""
+    return render_template("blog.html")
+
+
+@app.route("/api/notes")
+def get_notes():
+    """Возвращает список заметок с сервера"""
+    headers = {"Authorization": API_TOKEN}
+    response = requests.get(f"{API_URL}/notes", headers=headers)
+
+    if response.status_code == 200:
+        notes = response.json()
+        return jsonify(notes)
+    else:
+        return jsonify({"error": "Failed to fetch notes"}), response.status_code
+
+
+@app.route("/api/note/<int:note_id>")
+def get_note(note_id):
+    """Получает HTML-версию заметки"""
+    headers = {"Authorization": API_TOKEN}
+    response = requests.get(f"{API_URL}/notes/{note_id}", headers=headers)
+
+    if response.status_code == 200:
+        note = response.json()
+        return jsonify({"id": note["id"], "content": note["content"]})
+    else:
+        return jsonify({"error": "Failed to fetch note"}), response.status_code
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -36,13 +70,13 @@ def login():
 
 
 
-@app.route('/')
-def index():
+@app.route('/admin')
+def admin():
     if not session.get("logged_in"):
         return redirect(url_for("login"))
     response = requests.get(API_URL, headers=headers)
     notes = response.json() if response.ok else []
-    return render_template('index.html', notes=notes)
+    return render_template('blog.html', notes=notes)
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -72,7 +106,7 @@ def add_note():
 
         responce = requests.post(API_URL, headers=headers, files=files)
         print(responce.content)
-        return redirect(url_for('index'))
+        return redirect(url_for('admin'))
 
     return render_template('add_note.html')
 
@@ -100,13 +134,13 @@ def edit_note(note_id):
             "markdown": open(filepath, 'rb')
         }
 
-        responce = requests.put(f"{API_URL}/{note_id}", headers=headers, files=files)
+        responce = requests.put(f"{API_URL}/notes/{note_id}", headers=headers, files=files)
         print(responce.text)
-        return redirect(url_for('index'))
+        return redirect(url_for('admin'))
 
     edit_headers = headers.copy()
     edit_headers["content_md"] = "true"
-    response = requests.get(f"{API_URL}/{note_id}", headers=edit_headers)
+    response = requests.get(f"{API_URL}/notes/{note_id}", headers=edit_headers)
     note = response.json()
     print(note)
     return render_template('edit_note.html', note=note)
@@ -116,7 +150,7 @@ def view_note(note_id):
     if not session.get("logged_in"):
         return redirect(url_for("login"))
     view_headers = headers.copy()
-    response = requests.get(f"{API_URL}/{note_id}", headers=view_headers)
+    response = requests.get(f"{API_URL}/notes/{note_id}", headers=view_headers)
 
     if response.status_code != 200:
         return f"Ошибка получения заметки: {response.text}", 400
@@ -131,8 +165,8 @@ def view_note(note_id):
 def delete_note(note_id):
     if not session.get("logged_in"):
         return redirect(url_for("login"))
-    requests.delete(f"{API_URL}/{note_id}", headers=headers)
-    return redirect(url_for('index'))
+    requests.delete(f"{API_URL}/notes/{note_id}", headers=headers)
+    return redirect(url_for('admin'))
 
 @app.route("/logout")
 def logout():

@@ -15,31 +15,38 @@ var Queries *db.Queries
 
 // Initialize the connection pool
 func ConnectDB() {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	const maxRetries = 5
+	const retryInterval = 2 * time.Second
 
-	// Load database URL from environment
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL is not set")
 	}
 
-	// Create connection pool
 	var err error
-	DBPool, err = pgxpool.New(ctx, dbURL)
-	if err != nil {
-		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	for i := 1; i <= maxRetries; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+		DBPool, err = pgxpool.New(ctx, dbURL)
+		if err == nil {
+			err = DBPool.Ping(ctx)
+			if err == nil {
+				cancel()
+				break // successful connection
+			}
+			DBPool.Close()
+		}
+
+		cancel()
+		log.Printf("Attempt %d: Failed to connect to PostgreSQL: %v", i, err)
+		time.Sleep(retryInterval)
 	}
 
-	// Verify connection
-	err = DBPool.Ping(ctx)
 	if err != nil {
-		log.Fatalf("Failed to ping database: %v", err)
+		log.Fatalf("Could not connect to PostgreSQL after %d attempts: %v", maxRetries, err)
 	}
 
-	// Initialize SQLC Queries
 	Queries = db.New(DBPool)
-
 	log.Println("Connected to PostgreSQL using pgxpool!")
 }
 

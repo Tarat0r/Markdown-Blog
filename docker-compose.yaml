@@ -41,9 +41,10 @@ services:
       context: .
       dockerfile: useless_client/Dockerfile
     # image: useless_client/latest
-    container_name: markdown_blog_useless_client
+    container_name: markdown_blog_frontend
     environment:
-      - API_URL=http://markdown_blog_api:8080
+      SERVER_URL: ${SERVER_URL}
+      API_TOKEN : ${API_TOKEN}
     ports:
       - "5050:5050"
     depends_on:

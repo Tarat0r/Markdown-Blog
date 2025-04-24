@@ -61,7 +61,7 @@ def login():
 
         if username == "admin" and password == "admin":
             session["logged_in"] = True
-            return redirect(url_for("index"))  # или куда ты хочешь
+            return redirect(url_for("admin"))  # или куда ты хочешь
         else:
             error = "Неверный логин или пароль"
             return render_template("login.html", error=error)
@@ -161,6 +161,8 @@ def view_note(note_id):
     title = filename.replace(".md", "").replace("_", " ")
 
     return render_template('view_note.html', title=title, content=content)
+
+
 @app.route('/delete/<int:note_id>', methods=['POST'])
 def delete_note(note_id):
     if not session.get("logged_in"):

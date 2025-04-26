@@ -1,4 +1,4 @@
-name: Build and Push Public Docker images to GHCR
+name: Build and Push to GHCR
 
 on:
   push:
@@ -15,24 +15,14 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
-      - name: Build useless_client Docker image
-        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/useless-client:latest -f useless_client/Dockerfile .
-
-      - name: Push useless_client Docker image
-        run: |
-          docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/useless-client:latest
-          curl -X PATCH "https://api.github.com/user/packages/container/useless-client/versions" \
-            -H "Authorization: Bearer ${{ secrets.GHCR_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -d '{"visibility":"public"}'
-
-      - name: Build mdblog-api Docker image
+      - name: Build api Docker image
         run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -f api/Dockerfile .
 
-      - name: Push mdblog-api Docker image
-        run: |
-          docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest
-          curl -X PATCH "https://api.github.com/user/packages/container/mdblog-api/versions" \
-            -H "Authorization: Bearer ${{ secrets.GHCR_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            -d '{"visibility":"public"}'
+      - name: Build useless_client Docker image
+        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -f useless_client/Dockerfile .
+      
+      - name: Push api Docker image
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest
+      
+      - name: Push useless_client Docker image
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest

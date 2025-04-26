@@ -16,13 +16,13 @@ jobs:
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
       - name: Build api Docker image
-        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog_api:latest -f api/Dockerfile .
+        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -f api/Dockerfile .
 
       - name: Build useless_client Docker image
-        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog_useless_client:latest -f useless_client/Dockerfile .
+        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -f useless_client/Dockerfile .
       
       - name: Push api Docker image
-        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog_api:latest
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest
       
       - name: Push useless_client Docker image
-        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog_useless_client:latest
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest

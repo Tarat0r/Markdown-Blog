@@ -17,10 +17,10 @@ services:
 
   # API service
   api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
-    # image: api/latest
+    # build:
+    #   context: .
+    #   dockerfile: api/Dockerfile
+    image: ghcr.io/tarat0r/mdblog-api:latest  
     container_name: markdown_blog_api
     environment:
       DATABASE_URL: ${DATABASE_URL}
@@ -37,10 +37,10 @@ services:
 
   # Useless Client (Python/Flask)
   useless_client:
-    build:
-      context: .
-      dockerfile: useless_client/Dockerfile
-    # image: useless_client/latest
+    # build:
+    #   context: .
+    #   dockerfile: useless_client/Dockerfile
+    image:  ghcr.io/tarat0r/mdblog-useless-client:latest
     container_name: markdown_blog_frontend
     environment:
       SERVER_URL: ${SERVER_URL}

@@ -6,3 +6,8 @@ api/images/*
 .secrets
 .idea/*
 database/local_pgdata/
+do-terraform/terraform.tfvars
+do-terraform/.terraform/
+do-terraform/terraform.tfstate.backup
+do-terraform/terraform.tfstate
+do-terraform/.terraform.lock.hcl

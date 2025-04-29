@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 # Настройки скрипта
-API_URL = os.getenv("SERVER_URL", "http://localhost:8080")  # URL API сервера
+API_URL = os.getenv("SERVER_URL")  # URL API сервера
 API_TOKEN = os.getenv("API_TOKEN")  # Токен API
 
 app = Flask(__name__)
@@ -74,9 +74,9 @@ def login():
 def admin():
     if not session.get("logged_in"):
         return redirect(url_for("login"))
-    response = requests.get(API_URL, headers=headers)
+    response = requests.get(f"{API_URL}/notes", headers=headers)
     notes = response.json() if response.ok else []
-    return render_template('blog.html', notes=notes)
+    return render_template('index.html', notes=notes)
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -104,7 +104,7 @@ def add_note():
             "markdown": open(filepath, 'rb')
         }
 
-        responce = requests.post(API_URL, headers=headers, files=files)
+        responce = requests.post(f"{API_URL}/notes", headers=headers, files=files)
         print(responce.content)
         return redirect(url_for('admin'))
 

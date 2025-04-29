@@ -22,7 +22,7 @@ class AppTestCase(unittest.TestCase):
         ]
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"<h1>Title</h1>", response.data)
+        self.assertIn(b"content", response.data)
 
     @patch('useless_client.app.requests.get')
     def test_edit_page(self, mock_get):

@@ -37,26 +37,26 @@ class AppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
 
     @patch('useless_client.app.requests.post')
-@patch('useless_client.app.requests.get')
-def test_add_note(self, mock_get, mock_post):
-    login_session(self.client)
+    @patch('useless_client.app.requests.get')
+    def test_add_note(self, mock_get, mock_post):
+        login_session(self.client)
 
-    mock_get.return_value.status_code = 200
-    mock_get.return_value.json.return_value = [
-        {"id": 1, "path": "notes/note1.md", "content": "<h1>Title</h1><p>Text</p>", "hash": "hash1"}
-    ]
-    mock_post.return_value.status_code = 200
-    mock_post.return_value.json.return_value = {
-        "id": 1, "path": "notes/note1.md", "content": "<h1>Title</h1><p>Text</p>", "hash": "hash1"
-    }
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = [
+            {"id": 1, "path": "notes/note1.md", "content": "<h1>Title</h1><p>Text</p>", "hash": "hash1"}
+        ]
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            "id": 1, "path": "notes/note1.md", "content": "<h1>Title</h1><p>Text</p>", "hash": "hash1"
+        }
 
-    response = self.client.post("/add", data={
-        "title": "note1",
-        "content": "# Title\n\nText"
-    }, follow_redirects=True)
+        response = self.client.post("/add", data={
+            "title": "note1",
+            "content": "# Title\n\nText"
+        }, follow_redirects=True)
 
-    self.assertEqual(response.status_code, 200)
-    self.assertIn(b"note1", response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"note1", response.data)
 
     @patch('useless_client.app.requests.delete')
     @patch('useless_client.app.requests.get')

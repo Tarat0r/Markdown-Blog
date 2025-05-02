@@ -2,7 +2,7 @@ services:
   db:
     image: postgres
     container_name: local_pgdb
-    restart: always
+    # restart: always
     ports:
       - "5432:5432"
     environment:

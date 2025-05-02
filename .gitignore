@@ -5,7 +5,7 @@ api/static/*
 api/images/*
 .secrets
 .idea/*
-database/local_pgdata/
+database/local_pgdata.zip
 do-terraform/terraform.tfvars
 do-terraform/.terraform/
 do-terraform/terraform.tfstate.backup

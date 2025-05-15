@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mdblog-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mdblog-client
+  template:
+    metadata:
+      labels:
+        app: mdblog-client
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: client
+          image: ghcr.io/tarat0r/mdblog-useless-client:latest
+          ports:
+            - containerPort: 5050
+          envFrom:
+            - secretRef:
+                name: env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mdblog-client
+spec:
+  type: NodePort
+  selector:
+    app: mdblog-client
+  ports:
+    - port: 80           # порт внутри кластера (для других сервисов)
+      targetPort: 5050   # порт внутри контейнера
+      nodePort: 30080    # внешний порт (на IP ноды)

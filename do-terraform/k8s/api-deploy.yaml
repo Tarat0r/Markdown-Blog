@@ -1,0 +1,51 @@
+# api-deploy.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: mdblog-api}
+spec:
+  replicas: 1           # стартуем с одного
+  selector:
+    matchLabels: {app: mdblog-api}
+  template:
+    metadata:
+      labels: {app: mdblog-api}
+      annotations:
+        prometheus.io/scrape: "true"     # ← заставит Prometheus автособрать метрики
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      imagePullSecrets: [{name: ghcr-secret}]
+      containers:
+      - name: api
+        image: ghcr.io/tarat0r/mdblog-api:latest
+        ports: [{containerPort: 8080}]
+        envFrom: [{secretRef: {name: env}}]
+        resources:
+          requests: {cpu: "200m", memory: "256Mi"}
+          limits:   {cpu: "400m", memory: "512Mi"}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: mdblog-api}
+spec:
+  selector: {app: mdblog-api}
+  ports: [{port: 80, targetPort: 8080}]
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: mdblog-api}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mdblog-api
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 15      # 15 %

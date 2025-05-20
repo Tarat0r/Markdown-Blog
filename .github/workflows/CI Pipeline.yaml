@@ -143,6 +143,64 @@ jobs:
       - name: Run tests for Web Service
         run: python -m unittest useless_client/tests/test_app.py
 
+  sonarqube-analysis:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- GO PART: API ---
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.24.1
+
+      - name: Install Go dependencies
+        working-directory: ./api
+        run: go mod tidy
+
+      - name: Generate Go test coverage
+        working-directory: ./api
+        run: go test -coverprofile=coverage.out ./...
+
+      # --- PYTHON PART: useless_client ---
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies and generate Python coverage
+        working-directory: ./useless_client
+        run: |
+          pip install -r requirements.txt
+          pip install coverage
+          coverage run -m unittest discover
+          coverage xml -o coverage.xml
+
+      # --- SONARQUBE SCAN ---
+
+      - name: Download and run SonarScanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+          unzip sonar-scanner.zip
+          export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
+
+          sonar-scanner \
+            -Dsonar.projectKey=Tarat0r_Markdown-Blog \
+            -Dsonar.organization=tarat0r \
+            -Dsonar.sources=api,useless_client \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.coverageReportPaths=api/coverage.out,useless_client/coverage.xml \
+            -Dsonar.qualitygate.wait=true
+
+        
   docker:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest

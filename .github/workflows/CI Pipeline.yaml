@@ -151,37 +151,74 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # --- GO PART: API ---
+# GO Part
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.24.1
+          cache-dependency-path: 'api/go.sum'
 
       - name: Install Go dependencies
         working-directory: ./api
         run: go mod tidy
 
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run SQL migration
+        run: psql "$DATABASE_URL" -f ./database/markdown_blog.sql
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Generate Go test coverage
         working-directory: ./api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+          STATIC_PATH: ${{ secrets.STATIC_PATH }}
+          HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
         run: go test -coverprofile=coverage.out ./...
 
-      # --- PYTHON PART: useless_client ---
+# Python Part
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install dependencies and generate Python coverage
+      - name: Install dependencies for Note Sync
+        working-directory: ./pc_client
+        run: |
+          echo "DIRECTORY=${{ secrets.DIRECTORY }}" >> .env
+          echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
+          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
+          echo "STATE_FILE=${{ secrets.STATE_FILE }}" >> .env
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install dependencies for Web Service
         working-directory: ./useless_client
         run: |
+          echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
+          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install coverage
-          coverage run -m unittest discover
-          coverage xml -o coverage.xml
 
-      # --- SONARQUBE SCAN ---
+
+      - name: Run Python tests with coverage
+        run: |
+          cd pc_client
+          pip install -r requirements.txt
+          coverage run -m unittest discover
+          coverage xml -o coverage-pc_client.xml
+          cd ..
+
+          cd useless_client
+          pip install -r requirements.txt
+          coverage run -m unittest discover
+          coverage xml -o coverage-useless_client.xml
+          cd ..
 
       - name: Download and run SonarScanner
         env:
@@ -192,19 +229,19 @@ jobs:
           export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
 
           sonar-scanner \
-            -Dsonar.projectKey=Tarat0r_Markdown-Blog \
-            -Dsonar.organization=tarat0r \
-            -Dsonar.sources=api,useless_client \
+            -Dsonar.projectKey=your_project_key \
+            -Dsonar.organization=your_org_id \
+            -Dsonar.sources=api,pc_client,useless_client \
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.coverageReportPaths=api/coverage.out,useless_client/coverage.xml \
+            -Dsonar.coverageReportPaths=api/coverage.out,pc_client/coverage-pc_client.xml,useless_client/coverage-useless_client.xml \
             -Dsonar.qualitygate.wait=true
 
         
   docker:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    needs: test
+    needs: sonarqube-analysis
     if: ${{ github.ref == 'refs/heads/main' && success() }}
 
     steps:

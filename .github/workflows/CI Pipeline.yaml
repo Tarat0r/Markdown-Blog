@@ -224,17 +224,25 @@ jobs:
 
       - name: Run Python tests with coverage
         run: |
-          cd pc_client
-          pip install -r requirements.txt
-          coverage run -m unittest discover
+          # cd pc_client
+          # pip install -r requirements.txt
+          pip install coverage
+          coverage run -m unittest pc_client/tests/test.py
           coverage xml -o coverage-pc_client.xml
-          cd ..
+          # cd ..
 
-          cd useless_client
-          pip install -r requirements.txt
-          coverage run -m unittest discover
+          # cd useless_client
+          # pip install -r requirements.txt
+          # pip install coverage
+          coverage run -m unittest useless_client/tests/test_app.py
           coverage xml -o coverage-useless_client.xml
-          cd ..
+          # cd ..
+
+      # - name: Run tests for Note Sync
+      #   run: python -m unittest pc_client/tests/test.py
+
+      # - name: Run tests for Web Service
+      #   run: python -m unittest useless_client/tests/test_app.py
 
       - name: Download and run SonarScanner
         env:

@@ -255,13 +255,13 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          args: >-
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.sources=.
-            -Dsonar.go.coverage.reportPaths=api/coverage.out
-            -Dsonar.python.coverage.reportPaths=coverage-pc_client.xml,coverage-useless_client.xml
+        # with:
+          # args: >-
+        #     -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+        #     -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+        #     -Dsonar.sources=.
+        #     -Dsonar.go.coverage.reportPaths=api/coverage.out
+        #     -Dsonar.python.coverage.reportPaths=coverage-pc_client.xml,coverage-useless_client.xml
 
       - name: SonarQube Quality Gate
         id: quality_gate

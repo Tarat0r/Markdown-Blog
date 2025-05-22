@@ -13,3 +13,4 @@ do-terraform/terraform.tfstate
 do-terraform/.terraform.lock.hcl
 do-terraform/k8s/secret.yaml
 .github/workflows/docker-ghcr.yml
+.github/workflows/event.json

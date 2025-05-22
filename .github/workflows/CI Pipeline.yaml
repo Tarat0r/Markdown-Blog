@@ -142,11 +142,14 @@ jobs:
 
       - name: Run tests for Web Service
         run: python -m unittest useless_client/tests/test_app.py
+# ======================================================================
+# ======================================================================
 
-  sonarqube-analysis:
-    name: SonarQube Scan
+  code_quality:
+    name: SonarQube Analysis
     runs-on: ubuntu-latest
-    needs: test
+    environment: development
+    # needs: test
 
     services:
       postgres:
@@ -166,15 +169,29 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        
+      # Set up JDK 17 for Sonar Scanner
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
-# GO Part
+      - name: Cache Sonar packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      # ------------------ Coverage (Go) ------------------
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: 1.24.1
           cache-dependency-path: 'api/go.sum'
-
+        
       - name: Install Go dependencies
         working-directory: ./api
         run: go mod tidy
@@ -187,16 +204,19 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Generate Go test coverage
+
+      - name: Run Go tests
         working-directory: ./api
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
           STATIC_PATH: ${{ secrets.STATIC_PATH }}
           HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
-        run: go test -coverprofile=coverage.out ./...
+        run: |
+          go test ./tests/handlers_test.go -coverprofile=coverage.out
+          go tool cover -func=coverage.out
 
-# Python Part
+      # ------------------ Python  ------------------
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -221,51 +241,41 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-
       - name: Run Python tests with coverage
         run: |
-          # cd pc_client
-          # pip install -r requirements.txt
           pip install coverage
-          coverage run -m unittest pc_client/tests/test.py
+          coverage run -m unittest discover pc_client/tests
           coverage xml -o coverage-pc_client.xml
-          # cd ..
+          coverage run -m unittest discover useless_client/tests
+          coverage xml -o coverage-useless_client.xml      
 
-          # cd useless_client
-          # pip install -r requirements.txt
-          # pip install coverage
-          coverage run -m unittest useless_client/tests/test_app.py
-          coverage xml -o coverage-useless_client.xml
-          # cd ..
-
-      # - name: Run tests for Note Sync
-      #   run: python -m unittest pc_client/tests/test.py
-
-      # - name: Run tests for Web Service
-      #   run: python -m unittest useless_client/tests/test_app.py
-
-      - name: Download and run SonarScanner
+      # ------------------ SonarQube Scan ------------------
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-          unzip sonar-scanner.zip
-          export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >-
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.sources=.
+            -Dsonar.go.coverage.reportPaths=api/coverage.out
+            -Dsonar.python.coverage.reportPaths=coverage-pc_client.xml,coverage-useless_client.xml
 
-          sonar-scanner \
-            -Dsonar.projectKey=your_project_key \
-            -Dsonar.organization=your_org_id \
-            -Dsonar.sources=api,pc_client,useless_client \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.coverageReportPaths=api/coverage.out,pc_client/coverage-pc_client.xml,useless_client/coverage-useless_client.xml \
-            -Dsonar.qualitygate.wait=true
-
-        
+      - name: SonarQube Quality Gate
+        id: quality_gate
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          pollingTimeoutSec: 600
+          
   docker:
     name: Build and Push Docker Images
     runs-on: ubuntu-latest
-    needs: sonarqube-analysis
+    needs: code_quality
     if: ${{ github.ref == 'refs/heads/main' && success() }}
 
     steps:

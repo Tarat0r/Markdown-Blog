@@ -142,14 +142,12 @@ jobs:
 
       - name: Run tests for Web Service
         run: python -m unittest useless_client/tests/test_app.py
-# ======================================================================
-# ======================================================================
 
   code_quality:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
     environment: development
-    # needs: test
+    needs: test
 
     services:
       postgres:

@@ -159,6 +159,25 @@ func TestCreateNoteNoImg(t *testing.T) {
 	}
 }
 
+func TestGetNote(t *testing.T) {
+	req, err := http.NewRequest("GET", "/notes/"+testNoteID, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(os.Getenv("AUTHORIZATION"))
+	req.Header.Set("Authorization", os.Getenv("AUTHORIZATION"))
+	req.Header.Set("content_md", "true")
+
+	rr := httptest.NewRecorder()
+	handler := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)(handlers.ListNotes)
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		log.Println(rr)
+		t.Errorf("ListNotes returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
+	}
+}
+
 func TestUpdateNote_NoImages(t *testing.T) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

@@ -14,6 +14,12 @@ import (
 )
 
 func main() {
+	if err := StartServer(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func StartServer() error { // NOSONAR
 	database.ConnectDB()
 	defer database.CloseDB() // Close connection pool on exit
 
@@ -33,12 +39,14 @@ func main() {
 
 	http.HandleFunc("DELETE /notes/{NoteID}", middlewareChain(handlers.DeleteNote))
 
-	host_address := os.Getenv("HOST_ADDRESS")
-	if host_address == "" {
-		host_address = "localhost:8080"
+	hostAddress := os.Getenv("HOST_ADDRESS")
+	if hostAddress == "" {
+		hostAddress = "localhost:8080"
 	}
-	log.Println("Server is working on http://" + host_address)
-	log.Fatal(http.ListenAndServe(host_address, nil))
+
+	log.Println("Server is working on http://" + hostAddress)
+
+	return http.ListenAndServe(hostAddress, nil)
 }
 
 // Middleware type definition

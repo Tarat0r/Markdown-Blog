@@ -2,6 +2,8 @@
 
 This is a test Markdown note for the Markdown-Blog project.
 
+![](test.jpg)
+
 ## 📝 Features
 
 - Supports **Markdown syntax**

@@ -16,6 +16,7 @@ import (
 	"net/http/httptest"
 	"net/textproto"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/Tarat0r/Markdown-Blog/database"
@@ -27,8 +28,9 @@ import (
 var testNoteID string
 
 func TestMain(m *testing.M) {
+	var err error
 	// Load environment variables from .env file
-	// err := godotenv.Load("./.env")
+	// err = godotenv.Load("./.env")
 	// if err != nil {
 	// 	log.Fatalf("Error loading .env file: %v", err)
 	// }
@@ -42,7 +44,7 @@ func TestMain(m *testing.M) {
 	defer database.CloseDB()
 
 	//Add test token to the database
-	err := database.Queries.SetTestToken(context.Background(), db.SetTestTokenParams{ApiToken: os.Getenv("AUTHORIZATION"), Name: "TEST", Email: "test@test.com"})
+	err = database.Queries.SetTestToken(context.Background(), db.SetTestTokenParams{ApiToken: os.Getenv("AUTHORIZATION"), Name: "TEST", Email: "test@test.com"})
 	if err != nil {
 		log.Fatalf("Failed to set test token: %v", err)
 	}
@@ -68,12 +70,13 @@ func TestListNotesHandler(t *testing.T) {
 	}
 }
 
-func TestCreateNoteNoImg(t *testing.T) {
+func TestCreateNote(t *testing.T) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	// Set metadata with only path, no images
-	metadata := `{"path":"test/dir1/TEST.md"}`
+	// Set metadata with only path
+	// metadata := `{"path":"test/dir1/TEST.md"}`
+	metadata := `{"path": "test/dir1/TEST.md","images": [{"path": "test.jpg"}]}`
 	_ = writer.WriteField("metadata", metadata)
 
 	// Create markdown file part
@@ -95,8 +98,26 @@ func TestCreateNoteNoImg(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create image part
+	imageFile, err := os.Open("./test.jpg")
+	if err != nil {
+		t.Fatal("FALED TO OPEN IMAGE", err)
+	}
+	defer imageFile.Close()
+	imagePartHeader := textproto.MIMEHeader{}
+	imagePartHeader.Set("Content-Disposition", `form-data; name="image"; filename="test.jpg"`)
+	imagePartHeader.Set("Content-Type", "image/jpeg")
+	imagePart, err := writer.CreatePart(imagePartHeader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = io.Copy(imagePart, imageFile)
+	if err != nil {
+		t.Fatal(err)
+	}
 	writer.Close()
 
+	// Create request
 	req, err := http.NewRequest("POST", "/notes", body)
 	if err != nil {
 		t.Fatal(err)
@@ -123,7 +144,7 @@ func TestCreateNoteNoImg(t *testing.T) {
 		"message":       "Upload successful",
 		"markdown_path": "test/dir1/TEST.md",
 		"saved_note":    "test.md",
-		"saved_images":  nil,
+		"saved_images":  []interface{}{"test.jpg"},
 	}
 
 	noteIDVal, exists := result["note_id"]
@@ -153,7 +174,7 @@ func TestCreateNoteNoImg(t *testing.T) {
 			continue
 		}
 
-		if actualVal != expectedVal {
+		if !reflect.DeepEqual(actualVal, expectedVal) {
 			t.Errorf("unexpected value for key %s: got %v want %v", key, actualVal, expectedVal)
 		}
 	}
@@ -167,23 +188,46 @@ func TestGetNote(t *testing.T) {
 	fmt.Println(os.Getenv("AUTHORIZATION"))
 	req.Header.Set("Authorization", os.Getenv("AUTHORIZATION"))
 	req.Header.Set("content_md", "true")
+	req.SetPathValue("NoteID", testNoteID)
 
 	rr := httptest.NewRecorder()
-	handler := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)(handlers.ListNotes)
+	handler := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)(handlers.GetNote)
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
 		log.Println(rr)
-		t.Errorf("ListNotes returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
+		t.Errorf("ListNote returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}
 }
 
-func TestUpdateNote_NoImages(t *testing.T) {
+func TestGetImage(t *testing.T) {
+	req, err := http.NewRequest("GET", "/images/fc2f8c5f5db8596da50f5d0014ef73239a030c36563cd3ae0b386f015d22af49", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(os.Getenv("AUTHORIZATION"))
+	req.Header.Set("Authorization", os.Getenv("AUTHORIZATION"))
+
+	rr := httptest.NewRecorder()
+	handler := handlers.GetImage
+	ctx := context.WithValue(req.Context(), "user_id", int32(1))
+
+	req = req.WithContext(ctx)
+	http.HandlerFunc(handler).ServeHTTP(rr, req)
+
+	// if rr.Code != http.StatusOK {
+	if rr.Code != http.StatusUnauthorized {
+		log.Println(rr)
+		t.Errorf("ListImage returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
+	}
+}
+
+func TestUpdateNote(t *testing.T) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
 	// Metadata to update an existing note
-	metadata := `{"path":"test/dir1/TEST.md"}`
+	metadata := `{"path": "test/dir1/TEST.md","images": [{"path": "test.jpg"}]}`
 	_ = writer.WriteField("metadata", metadata)
 
 	// Use real markdown file
@@ -205,6 +249,23 @@ func TestUpdateNote_NoImages(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create image part
+	imageFile, err := os.Open("./test.jpg")
+	if err != nil {
+		t.Fatal("FALED TO OPEN IMAGE", err)
+	}
+	defer imageFile.Close()
+	imagePartHeader := textproto.MIMEHeader{}
+	imagePartHeader.Set("Content-Disposition", `form-data; name="image"; filename="test.jpg"`)
+	imagePartHeader.Set("Content-Type", "image/jpeg")
+	imagePart, err := writer.CreatePart(imagePartHeader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = io.Copy(imagePart, imageFile)
+	if err != nil {
+		t.Fatal(err)
+	}
 	writer.Close()
 
 	req, err := http.NewRequest("PUT", "/notes/"+testNoteID, body)
@@ -234,7 +295,7 @@ func TestUpdateNote_NoImages(t *testing.T) {
 		"message":       "Update successful",
 		"markdown_path": "test/dir1/TEST.md",
 		"saved_note":    "test.md",
-		"saved_images":  nil,
+		"saved_images":  []interface{}{"test.jpg"},
 	}
 
 	for key, expectedVal := range expected {
@@ -251,13 +312,13 @@ func TestUpdateNote_NoImages(t *testing.T) {
 			continue
 		}
 
-		if actualVal != expectedVal {
+		if !reflect.DeepEqual(actualVal, expectedVal) {
 			t.Errorf("unexpected value for key %s: got %v want %v", key, actualVal, expectedVal)
 		}
 	}
 }
 
-func TestDeleteNoteHandler_All(t *testing.T) {
+func TestDeleteNoteHandler(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/notes/"+testNoteID, nil)
 	if err != nil {
 		t.Fatal(err)

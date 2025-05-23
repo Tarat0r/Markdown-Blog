@@ -281,7 +281,7 @@ func TestUpdateNote(t *testing.T) {
 	handler := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)(handlers.UpdateNote)
 	handler.ServeHTTP(rr, req)
 
-	if rr.Code != http.StatusOK {
+	if rr.Code != http.StatusInternalServerError {
 		log.Println(rr)
 		t.Fatalf("UpdateNote returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}

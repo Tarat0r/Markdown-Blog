@@ -2,7 +2,7 @@
 // TODO : Fix image uploading without images + response
 // TODO : Fix image updating without images + response
 
-package main
+package handlers_test
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ var testNoteID string
 
 func TestMain(m *testing.M) {
 	// Load environment variables from .env file
-	// err := godotenv.Load()
+	// err := godotenv.Load("./.env")
 	// if err != nil {
 	// 	log.Fatalf("Error loading .env file: %v", err)
 	// }
@@ -68,7 +68,7 @@ func TestListNotesHandler(t *testing.T) {
 	}
 }
 
-func TestCreateNote_NoImages(t *testing.T) {
+func TestCreateNoteNoImg(t *testing.T) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 

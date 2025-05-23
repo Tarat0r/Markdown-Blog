@@ -204,15 +204,16 @@ jobs:
 
 
       - name: Run Go tests
-        # working-directory: ./api
+        working-directory: ./api
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
           STATIC_PATH: ${{ secrets.STATIC_PATH }}
           HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
         run: |
-          go test ./api/... -covermode=atomic -coverpkg=./api/... -coverprofile=coverage.out
-          go tool cover -func=coverage.out
+          go test ./... -covermode=atomic -coverpkg=./... -coverprofile=coverage.tmp
+          sed -E 's#^github.com/Tarat0r/Markdown-Blog/##' coverage.tmp > $GITHUB_WORKSPACE/coverage.out
+          go tool cover -func=$GITHUB_WORKSPACE/coverage.out
 
       # ------------------ Python  ------------------
 

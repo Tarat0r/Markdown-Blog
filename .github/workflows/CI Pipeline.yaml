@@ -212,7 +212,8 @@ jobs:
           HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
         run: |
           go test ./... -covermode=atomic -coverpkg=./... -coverprofile=coverage.tmp
-          sed -E 's#^github.com/Tarat0r/Markdown-Blog/##' coverage.tmp > $GITHUB_WORKSPACE/coverage.out
+          # sed -E 's#^github.com/Tarat0r/Markdown-Blog/##' coverage.tmp > $GITHUB_WORKSPACE/coverage.out
+          awk 'NR==1 {print; next} {print "api/" $0}' coverage.tmp > $GITHUB_WORKSPACE/coverage.out
           go tool cover -func=$GITHUB_WORKSPACE/coverage.out
 
       # ------------------ Python  ------------------

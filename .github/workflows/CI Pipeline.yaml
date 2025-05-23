@@ -217,7 +217,8 @@ jobs:
           # go tool cover -func=$GITHUB_WORKSPACE/coverage.out
           # awk 'NR==1 {print; next} {print "api/" $0}' coverage.tmp > ../coverage.out
           # sed 's|github.com/Tarat0r/Markdown-Blog/|api/|' coverage.tmp > ../coverage.out
-          # go tool cover -func=../coverage.out
+          go tool cover -func=coverage.out
+          sed -i -e 's|github.com/Tarat0r/Markdown-Blog/|api/|' coverage.out
 
       # ------------------ Python  ------------------
 

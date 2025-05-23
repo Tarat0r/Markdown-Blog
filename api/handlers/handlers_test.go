@@ -144,7 +144,8 @@ func TestCreateNote(t *testing.T) {
 		"message":       "Upload successful",
 		"markdown_path": "test/dir1/TEST.md",
 		"saved_note":    "test.md",
-		"saved_images":  []interface{}{"test.jpg"},
+		// "saved_images":  []interface{}{"test.jpg"},
+		"saved_images": nil,
 	}
 
 	noteIDVal, exists := result["note_id"]

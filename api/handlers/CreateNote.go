@@ -340,7 +340,8 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 			if errors.Is(err, sql.ErrNoRows) {
 				// Save image if it does not exist
 				// savePath := os.Getenv("STATIC_PATH") + "/" + img.Hash
-				staticDir := os.Getenv("STATIC_PATH")
+
+				staticDir := getStaticPath()
 				if staticDir == "" {
 					return nil, errors.New("STATIC_PATH env var is not set")
 				}
@@ -381,4 +382,8 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 		images = append(images, img)
 	}
 	return images, nil
+}
+
+func getStaticPath() string {
+	return os.Getenv("STATIC_PATH")
 }

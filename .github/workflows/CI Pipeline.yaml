@@ -34,8 +34,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
-          STATIC_PATH: ${{ secrets.STATIC_PATH }}
-          HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
+          STATIC_PATH: ${{ vars.STATIC_PATH }}
+          HOST_ADDRESS: ${{ vars.HOST_ADDRESS }}
         run: go build ./...
 
       # Set up Python for both clients
@@ -47,10 +47,10 @@ jobs:
       - name: Install dependencies for Note Sync
         working-directory: ./pc_client
         run: |
-          echo "DIRECTORY=${{ secrets.DIRECTORY }}" >> .env
+          echo "DIRECTORY=${{ vars.DIRECTORY }}" >> .env
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
-          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
-          echo "STATE_FILE=${{ secrets.STATE_FILE }}" >> .env
+          echo "SERVER_URL=${{ vars.HOST_ADDRESS }}" >> .env
+          echo "STATE_FILE=${{ vars.STATE_FILE }}" >> .env
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -58,7 +58,7 @@ jobs:
         working-directory: ./useless_client
         run: |
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
-          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
+          echo "SERVER_URL=${{ vars.HOST_ADDRESS }}" >> .env
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -110,8 +110,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
-          STATIC_PATH: ${{ secrets.STATIC_PATH }}
-          HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
+          STATIC_PATH: ${{ vars.STATIC_PATH }}
+          HOST_ADDRESS: ${{ vars.HOST_ADDRESS }}
         run: |
             echo "STATIC_PATH=$STATIC_PATH"
             go test ./...
@@ -124,10 +124,10 @@ jobs:
       - name: Install dependencies for Note Sync
         working-directory: ./pc_client
         run: |
-          echo "DIRECTORY=${{ secrets.DIRECTORY }}" >> .env
+          echo "DIRECTORY=${{ vars.DIRECTORY }}" >> .env
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
-          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
-          echo "STATE_FILE=${{ secrets.STATE_FILE }}" >> .env
+          echo "SERVER_URL=${{ vars.HOST_ADDRESS }}" >> .env
+          echo "STATE_FILE=${{ vars.STATE_FILE }}" >> .env
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -135,7 +135,7 @@ jobs:
         working-directory: ./useless_client
         run: |
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
-          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
+          echo "SERVER_URL=${{ vars.HOST_ADDRESS }}" >> .env
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -210,8 +210,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
-          STATIC_PATH: ${{ secrets.STATIC_PATH }}
-          HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
+          STATIC_PATH: ${{ vars.STATIC_PATH }}
+          HOST_ADDRESS: ${{ vars.HOST_ADDRESS }}
         run: |
           go test ./... -covermode=atomic -coverpkg=./... -coverprofile=coverage.out
           go tool cover -func=coverage.out
@@ -227,10 +227,10 @@ jobs:
       - name: Install dependencies for Note Sync
         working-directory: ./pc_client
         run: |
-          echo "DIRECTORY=${{ secrets.DIRECTORY }}" >> .env
+          echo "DIRECTORY=${{ vars.DIRECTORY }}" >> .env
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
-          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
-          echo "STATE_FILE=${{ secrets.STATE_FILE }}" >> .env
+          echo "SERVER_URL=${{ vars.HOST_ADDRESS }}" >> .env
+          echo "STATE_FILE=${{ vars.STATE_FILE }}" >> .env
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -238,7 +238,7 @@ jobs:
         working-directory: ./useless_client
         run: |
           echo "API_TOKEN=${{ secrets.AUTHORIZATION }}" >> .env
-          echo "SERVER_URL=${{ secrets.HOST_ADDRESS }}" >> .env
+          echo "SERVER_URL=${{ vars.HOST_ADDRESS }}" >> .env
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 

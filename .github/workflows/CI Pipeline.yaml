@@ -112,7 +112,9 @@ jobs:
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
           STATIC_PATH: ${{ secrets.STATIC_PATH }}
           HOST_ADDRESS: ${{ secrets.HOST_ADDRESS }}
-        run: go test ./...
+        run: |
+            echo "STATIC_PATH=$STATIC_PATH"
+            go test ./...
 
       - name: Set up Python
         uses: actions/setup-python@v4

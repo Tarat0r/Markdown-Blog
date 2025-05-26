@@ -101,12 +101,8 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		// w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	mimeType := http.DetectContentType(buffer)
 
-	isValidMarkdown := strings.HasPrefix(mimeType, "text/plain") ||
-		(mimeType == "application/octet-stream" && n < 512)
-
-	if !isValidMarkdown {
+	if !IsValidMarkdown(http.DetectContentType(buffer), n) {
 		// log.Println("user:", contextUserID, "", strings.TrimSpace(mimeType), " ", header.Filename)
 		// writeJSONError(w, r, nil, "Invalid markdown file type", http.StatusBadRequest)
 		return
@@ -180,7 +176,7 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return JSON Response
-	log.Println("user:", contextUserID, "", "Note created successfully")
+	// log.Println("user:", contextUserID, "", "Note created successfully")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -386,4 +382,9 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 
 func getStaticPath() string {
 	return os.Getenv("STATIC_PATH")
+}
+
+func IsValidMarkdown(mimeType string, n int) bool {
+	return strings.HasPrefix(mimeType, "text/plain") ||
+		(mimeType == "application/octet-stream" && n < 512)
 }

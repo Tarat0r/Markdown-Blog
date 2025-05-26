@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 
 func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
-	contextUserID, ok := r.Context().Value("contextUserID").(int32)
+	contextUserID := r.Context().Value("contextUserID").(int32)
 	// if !ok {
 	// 	// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
 	// 	return
@@ -78,14 +79,15 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		(mimeType == "application/octet-stream" && n < 512)
 
 	if !isValidMarkdown {
-		// log.Println("user:", contextUserID, "", strings.TrimSpace(mimeType), " ", header.Filename)
+		log.Println("user:", contextUserID, "", strings.TrimSpace(mimeType), " ", header.Filename)
 		// writeJSONError(w, r, nil, "Invalid markdown file type", http.StatusBadRequest)
 		return
 	}
 	var noteParams db.UpdateNoteParams
 
-	noteParams.Path = req.Path
 	noteParams.UserID = contextUserID
+	noteParams.Path = req.Path
+	var ok bool
 	noteParams.ID, ok = GetIDFromURI(w, r, contextUserID)
 	if !ok {
 		return

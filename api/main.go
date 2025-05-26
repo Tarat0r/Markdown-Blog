@@ -24,7 +24,7 @@ func StartServer() error { // NOSONAR
 	defer database.CloseDB() // Close connection pool on exit
 
 	// Run database migrations
-	database.RunMigrations()
+	database.RunMigrations("../database/markdown_blog.sql")
 
 	// Define middleware chain
 	middlewareChain := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)

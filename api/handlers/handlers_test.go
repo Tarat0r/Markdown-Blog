@@ -43,6 +43,8 @@ func TestMain(m *testing.M) {
 	database.ConnectDB()
 	defer database.CloseDB()
 
+	database.RunMigrations("../../database/markdown_blog.sql")
+
 	//Add test token to the database
 	err = database.Queries.SetTestToken(context.Background(), db.SetTestTokenParams{ApiToken: os.Getenv("AUTHORIZATION"), Name: "TEST", Email: "test@test.com"})
 	if err != nil {
@@ -208,16 +210,13 @@ func TestGetImage(t *testing.T) {
 	}
 	fmt.Println(os.Getenv("AUTHORIZATION"))
 	req.Header.Set("Authorization", os.Getenv("AUTHORIZATION"))
+	log.Println(req.Header.Get("Authorization"))
 
 	rr := httptest.NewRecorder()
-	handler := handlers.GetImage
-	ctx := context.WithValue(req.Context(), "user_id", int32(1))
+	handler := MiddlewareChain(middleware.LoggingMiddleware, middleware.AuthMiddleware)(handlers.GetImage)
+	handler.ServeHTTP(rr, req)
 
-	req = req.WithContext(ctx)
-	http.HandlerFunc(handler).ServeHTTP(rr, req)
-
-	// if rr.Code != http.StatusOK {
-	if rr.Code != http.StatusUnauthorized {
+	if rr.Code != http.StatusOK {
 		log.Println(rr)
 		t.Errorf("ListImage returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}

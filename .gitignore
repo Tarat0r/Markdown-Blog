@@ -14,3 +14,6 @@ do-terraform/.terraform.lock.hcl
 do-terraform/k8s/secret.yaml
 .github/workflows/docker-ghcr.yml
 .github/workflows/event.json
+api/database/database.go
+.github/workflows/.vars
+api/handlers/images/fc2f8c5f5db8596da50f5d0014ef73239a030c36563cd3ae0b386f015d22af49

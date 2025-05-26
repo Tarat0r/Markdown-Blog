@@ -11,25 +11,25 @@ import (
 
 // TODO Delete images if not used
 func DeleteNote(w http.ResponseWriter, r *http.Request) {
-	user_id, ok := r.Context().Value("user_id").(int32)
+	contextUserID, ok := r.Context().Value("contextUserID").(int32)
 	if !ok {
-		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+		// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	note_id, ok := GetIDFromURI(w, r, user_id)
+	noteID, ok := GetIDFromURI(w, r, contextUserID)
 	if !ok {
 		return
 	}
 
 	params := db.DeleteNoteParams{
-		UserID: user_id,
-		ID:     note_id,
+		UserID: contextUserID,
+		ID:     noteID,
 	}
 
 	path, err := database.Queries.DeleteNote(context.Background(), params)
 	if err != nil {
-		writeJSONError(w, r, err, "Error deleting note", http.StatusInternalServerError)
+		// writeJSONError(w, r, err, "Error deleting note", http.StatusInternalServerError)
 		return
 	}
 	pathJSON := map[string]string{"message": "Note deleted successfully", "path": path}

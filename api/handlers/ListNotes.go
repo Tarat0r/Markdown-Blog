@@ -9,15 +9,15 @@ import (
 )
 
 func ListNotes(w http.ResponseWriter, r *http.Request) {
-	user_id, ok := r.Context().Value("user_id").(int32)
-	if !ok {
-		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
+	contextUserID := r.Context().Value("contextUserID").(int32)
+	// if !ok {
+	// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+	// return
+	// }
 
-	notes, err := database.Queries.ListNotesByUser(context.Background(), user_id)
+	notes, err := database.Queries.ListNotesByUser(context.Background(), contextUserID)
 	if err != nil {
-		writeJSONError(w, r, err, "Error listing notes", http.StatusInternalServerError)
+		// writeJSONError(w, r, err, "Error listing notes", http.StatusInternalServerError)
 		return
 	} else if notes == nil {
 		notes = make([]db.ListNotesByUserRow, 0)

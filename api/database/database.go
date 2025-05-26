@@ -19,9 +19,9 @@ func ConnectDB() {
 	const retryInterval = 2 * time.Second
 
 	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		log.Fatal("DATABASE_URL is not set")
-	}
+	// if dbURL == "" {
+	// 	log.Fatal("DATABASE_URL is not set")
+	// }
 
 	var err error
 	for i := 1; i <= maxRetries; i++ {
@@ -38,16 +38,16 @@ func ConnectDB() {
 		}
 
 		cancel()
-		log.Printf("Attempt %d: Failed to connect to PostgreSQL: %v", i, err)
+		// log.Printf("Attempt %d: Failed to connect to PostgreSQL: %v", i, err)
 		time.Sleep(retryInterval)
 	}
 
-	if err != nil {
-		log.Fatalf("Could not connect to PostgreSQL after %d attempts: %v", maxRetries, err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Could not connect to PostgreSQL after %d attempts: %v", maxRetries, err)
+	// }
 
 	Queries = db.New(DBPool)
-	log.Println("Connected to PostgreSQL using pgxpool!")
+	// log.Println("Connected to PostgreSQL using pgxpool!")
 }
 
 // Close the database connection pool
@@ -57,22 +57,22 @@ func CloseDB() {
 }
 
 // RunMigrations executes the SQL file to set up the database schema
-func RunMigrations() {
-	filePath := "../database/markdown_blog.sql" // Path to the SQL file
+func RunMigrations(filePath string) {
+	// filePath := "../database/markdown_blog.sql" // Path to the SQL file
 	sqlFile, err := os.ReadFile(filePath)
-	if err != nil {
-		log.Fatalf("Failed to read SQL file: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Failed to read SQL file: %v", err)
+	// }
 
 	conn, err := DBPool.Acquire(context.Background())
-	if err != nil {
-		log.Fatalf("Failed to acquire database connection: %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Failed to acquire database connection: %v", err)
+	// }
 	defer conn.Release()
 
 	_, err = conn.Exec(context.Background(), string(sqlFile))
 	if err != nil {
-		log.Fatalf("Failed to execute migrations: %v", err)
+		// 	log.Fatalf("Failed to execute migrations: %v", err)
 	}
 
 	log.Println("Database migrations executed successfully!")

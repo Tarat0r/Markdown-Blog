@@ -44,9 +44,9 @@ type Image struct {
 
 func CreateNote(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
-	user_id, ok := r.Context().Value("user_id").(int32)
+	contextUserID, ok := r.Context().Value("contextUserID").(int32)
 	if !ok {
-		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+		// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -67,9 +67,9 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle Image Uploads
-	images, err := ImageUploadHandler(w, r, req, user_id)
+	images, err := ImageUploadHandler(w, r, req, contextUserID)
 	// if err != nil {
-	// 	log.Println("user:", user_id, "", err)
+	// 	log.Println("user:", contextUserID, "", err)
 	// 	writeJSONError(w, r, err, "Failed to save images", http.StatusInternalServerError)
 	// 	return
 	// }
@@ -92,12 +92,12 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	buffer := make([]byte, 512)
 	n, err := mdFile.Read(buffer)
 	// if err != nil {
-	// 	log.Println("user:", user_id, "", "Failed to read file", " ", err)
+	// 	log.Println("user:", contextUserID, "", "Failed to read file", " ", err)
 	// 	w.WriteHeader(http.StatusInternalServerError)
 	// 	return
 	// }
 	if _, err := mdFile.Seek(0, io.SeekStart); err != nil {
-		// log.Println("user:", user_id, "", "Failed to reset file pointer", " ", err)
+		// log.Println("user:", contextUserID, "", "Failed to reset file pointer", " ", err)
 		// w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -107,55 +107,55 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		(mimeType == "application/octet-stream" && n < 512)
 
 	if !isValidMarkdown {
-		// log.Println("user:", user_id, "", strings.TrimSpace(mimeType), " ", header.Filename)
+		// log.Println("user:", contextUserID, "", strings.TrimSpace(mimeType), " ", header.Filename)
 		// writeJSONError(w, r, nil, "Invalid markdown file type", http.StatusBadRequest)
 		return
 	}
 
-	var note_params db.CreateNoteParams
+	var noteParams db.CreateNoteParams
 
-	note_params.Path = req.Path
-	note_params.UserID = user_id
+	noteParams.Path = req.Path
+	noteParams.UserID = contextUserID
 	// Compute SHA-256 Hash of Markdown file
-	note_params.Hash, err = ComputeSHA256Hash(mdFile)
+	noteParams.Hash, err = ComputeSHA256Hash(mdFile)
 	// if err != nil {
-	// 	log.Println("user:", user_id, "", "Failed to compute markdown file hash", " ", err)
+	// 	log.Println("user:", contextUserID, "", "Failed to compute markdown file hash", " ", err)
 	// 	w.WriteHeader(http.StatusInternalServerError)
 	// 	return
 	// }
 
 	// Reset file pointer to the beginning before reading the content
 	if _, err := mdFile.Seek(0, io.SeekStart); err != nil {
-		// log.Println("user:", user_id, "", "Failed to reset file pointer", " ", err)
+		// log.Println("user:", contextUserID, "", "Failed to reset file pointer", " ", err)
 		// w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	mdContent, err := io.ReadAll(mdFile)
 	// if err != nil {
-	// 	log.Println("user:", user_id, "", "Failed to read markdown file", " ", err)
+	// 	log.Println("user:", contextUserID, "", "Failed to read markdown file", " ", err)
 	// 	w.WriteHeader(http.StatusInternalServerError)
 	// 	return
 	// }
-	note_params.ContentMd = string(mdContent)
+	noteParams.ContentMd = string(mdContent)
 
-	note_params.Content, err = MarkdownToHTML(w, r, images, mdContent, note_params.Path, user_id)
+	noteParams.Content, err = MarkdownToHTML(w, r, images, mdContent, noteParams.Path, contextUserID)
 	// if err != nil {
 	// 	writeJSONError(w, r, err, "Failed to convert Markdown to HTML (Image file is missing)", http.StatusInternalServerError)
 	// 	return
 	// }
 
-	notesByPath, err := database.Queries.GetNoteByPath(r.Context(), db.GetNoteByPathParams{Path: note_params.Path, UserID: note_params.UserID})
+	notesByPath, err := database.Queries.GetNoteByPath(r.Context(), db.GetNoteByPathParams{Path: noteParams.Path, UserID: noteParams.UserID})
 	// if err != nil {
 	// 	writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
 	// 	return
 	// }
 	if len(notesByPath) > 0 {
-		writeJSONError(w, r, errors.New("Note already exists"), "Note already exists", http.StatusBadRequest)
+		// writeJSONError(w, r, errors.New("Note already exists"), "Note already exists", http.StatusBadRequest)
 		return
 	}
 
-	uploadedNote, err := database.Queries.CreateNote(r.Context(), note_params)
+	uploadedNote, err := database.Queries.CreateNote(r.Context(), noteParams)
 	// if err != nil {
 	// 	writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
 	// 	return
@@ -180,13 +180,13 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return JSON Response
-	log.Println("user:", user_id, "", "Note created successfully")
+	log.Println("user:", contextUserID, "", "Note created successfully")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message":       "Upload successful",
 		"note_id":       uploadedNote.ID,
-		"markdown_path": note_params.Path,
+		"markdown_path": noteParams.Path,
 		"saved_note":    header.Filename,
 		"saved_images": func() []string {
 			var paths []string
@@ -282,14 +282,14 @@ func MarkdownToHTML(w http.ResponseWriter, r *http.Request, img []Image, md []by
 	// Render the modified AST back into HTML
 	var buf bytes.Buffer
 	if err := gm.Renderer().Render(&buf, md, doc); err != nil {
-		log.Println("user:", userID, "", "Failed to render HTML", " ", err)
+		// log.Println("user:", userID, "", "Failed to render HTML", " ", err)
 		return "", err
 	}
 	return buf.String(), nil
 }
 
 // ImageUploadHandler handles image uploads
-func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadRequest, user_id int32) ([]Image, error) {
+func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadRequest, contextUserID int32) ([]Image, error) {
 	var img Image
 	var images []Image // Slice to hold images
 	var err error
@@ -374,7 +374,7 @@ func ImageUploadHandler(w http.ResponseWriter, r *http.Request, req UploadReques
 				if err != nil {
 					return nil, errors.New("Failed to save image to database")
 				}
-				log.Println("user:", user_id, "", "Image saved to:", savePath)
+				log.Println("user:", contextUserID, "", "Image saved to:", savePath)
 			} else {
 				return nil, errors.New("Failed to get hash from database")
 			}

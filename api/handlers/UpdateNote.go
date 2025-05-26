@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -94,11 +92,11 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 	// Compute SHA-256 Hash of Markdown file
 	noteParams.Hash, err = ComputeSHA256Hash(mdFile)
-	if err != nil {
-		// log.Println("user:", contextUserID, "", "Failed to compute markdown file hash", " ", err)
-		// w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	// if err != nil {
+	// log.Println("user:", contextUserID, "", "Failed to compute markdown file hash", " ", err)
+	// w.WriteHeader(http.StatusInternalServerError)
+	// return
+	// }
 
 	// Reset file pointer to the beginning before reading the content
 	if _, err := mdFile.Seek(0, io.SeekStart); err != nil {
@@ -108,11 +106,11 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mdContent, err := io.ReadAll(mdFile)
-	if err != nil {
-		// log.Println("user:", contextUserID, "", "Failed to read markdown file", " ", err)
-		// w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	// if err != nil {
+	// log.Println("user:", contextUserID, "", "Failed to read markdown file", " ", err)
+	// w.WriteHeader(http.StatusInternalServerError)
+	// return
+	// }
 	noteParams.ContentMd = string(mdContent)
 
 	noteParams.Content, err = MarkdownToHTML(w, r, images, mdContent, noteParams.Path, contextUserID)
@@ -153,16 +151,17 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 		_, err = database.Queries.GetNoteImage(r.Context(), db.GetNoteImageParams{ImageID: img.Id, NoteID: existingNote.ID})
 		if err == nil {
 			continue
-		} else if !errors.Is(err, sql.ErrNoRows) {
-			// writeJSONError(w, r, err, "Failed to get note, image", http.StatusInternalServerError)
-			return
 		}
-		err := database.Queries.LinkImageToNote(r.Context(), db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote.ID})
-		if err != nil {
-			// log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote.ID})
-			// writeJSONError(w, r, err, "Failed to link note and image", http.StatusInternalServerError)
-			return
-		}
+		// } else if !errors.Is(err, sql.ErrNoRows) {
+		// writeJSONError(w, r, err, "Failed to get note, image", http.StatusInternalServerError)
+		// return
+		// }
+		err = database.Queries.LinkImageToNote(r.Context(), db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote.ID})
+		// if err != nil {
+		// log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: existingNote.ID})
+		// writeJSONError(w, r, err, "Failed to link note and image", http.StatusInternalServerError)
+		// return
+		// }
 	}
 
 	// Return JSON Response

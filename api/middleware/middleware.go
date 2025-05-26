@@ -2,8 +2,6 @@ package middleware
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"net/http"
 	"regexp"
 
@@ -16,9 +14,9 @@ type contextKey string
 const UserIDKey contextKey = "contextUserID"
 
 // JSON response structure
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
+// type ErrorResponse struct {
+// 	Error string `json:"error"`
+// }
 
 // LoggingMiddleware logs incoming requests
 func LoggingMiddleware(next http.HandlerFunc) http.HandlerFunc {
@@ -34,10 +32,10 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		// Get Authorization header
 		token := r.Header.Get("Authorization")
-		if token == "" {
-			// writeJSONError(w, "Missing Authorization header", http.StatusUnauthorized)
-			return
-		}
+		// if token == "" {
+		// writeJSONError(w, "Missing Authorization header", http.StatusUnauthorized)
+		// return
+		// }
 
 		// Check token format
 		if !isValidToken(token) {
@@ -48,10 +46,10 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		// Check token in database
 		id, err := database.Queries.GetIDByToken(context.Background(), token)
 
-		if errors.Is(err, sql.ErrNoRows) {
-			// writeJSONError(w, "Invalid API token", http.StatusUnauthorized)
-			return
-		}
+		// if errors.Is(err, sql.ErrNoRows) {
+		// writeJSONError(w, "Invalid API token", http.StatusUnauthorized)
+		// return
+		// }
 
 		if err != nil {
 			// log.Println("Database error:", err)

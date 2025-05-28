@@ -325,7 +325,7 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
 
       - name: Test kubectl connection
-        run: kubectl get nodes
+        run: kubectl --kubeconfig $HOME/.kube/config get nodes
 
       - name: Deploy updated Docker images
         run: |

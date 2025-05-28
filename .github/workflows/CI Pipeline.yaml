@@ -324,6 +324,9 @@ jobs:
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
 
+      - name: Test kubectl connection
+        run: kubectl get nodes
+
       - name: Deploy updated Docker images
         run: |
           kubectl set image deployment/mdblog-api mdblog-api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -n mdblog

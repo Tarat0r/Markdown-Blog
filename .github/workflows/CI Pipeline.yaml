@@ -327,8 +327,6 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-
-
       # Fetch kubeconfig for the cluster
       - name: Set up kubeconfig
         run: doctl kubernetes cluster kubeconfig save ${{ vars.DO_CLUSTER_ID }}

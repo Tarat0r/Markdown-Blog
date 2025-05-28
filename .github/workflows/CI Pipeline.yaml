@@ -319,6 +319,25 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Install & Auth doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      # Fetch kubeconfig for the cluster
+      - name: Set up kubeconfig
+        run: doctl kubernetes cluster kubeconfig save ${{ vars.DO_CLUSTER_ID }}
+
+      # Verify cluster reachability
+      - name: Cluster info
+        run: kubectl cluster-info
+
+
+
+
+
+
+
       - name: Set up kubeconfig
         run: |
           mkdir -p ~/.kube

@@ -334,8 +334,8 @@ jobs:
 
       - name: Deploy updated Docker images
         run: |
-          kubectl set image deployment/mdblog-api mdblog-api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -n mdblog
-          kubectl set image deployment/mdblog-client mdblog-client=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -n mdblog
+          kubectl set image deployment/mdblog-api api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -n mdblog
+          kubectl set image deployment/mdblog-client client=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -n mdblog
 
       # Wait for rollout to finish
       - name: Check rollout status (API)

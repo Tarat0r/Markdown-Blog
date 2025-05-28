@@ -293,16 +293,16 @@ jobs:
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin
 
       - name: Build api Docker image
-        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -f api/Dockerfile .
+        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:${{ github.sha }} -f api/Dockerfile .
 
       - name: Build useless_client Docker image
-        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -f useless_client/Dockerfile .
+        run: docker build -t ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:${{ github.sha }} -f useless_client/Dockerfile .
 
       - name: Push api Docker image
-        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:${{ github.sha }}
 
       - name: Push useless_client Docker image
-        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest
+        run: docker push ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:${{ github.sha }}
 
   deploy:
     name: Deploy to DigitalOcean Kubernetes
@@ -335,8 +335,8 @@ jobs:
       - name: Deploy updated Docker images
         run: |
           cd do-terraform/k8s
-          kubectl set image deployment/mdblog-api api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -n mdblog
-          kubectl set image deployment/mdblog-client client=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -n mdblog
+          kubectl set image deployment/mdblog-api api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:${{ github.sha }} -n mdblog
+          kubectl set image deployment/mdblog-client client=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:${{ github.sha }} -n mdblog
 
       # # Apply the manifests
       # - name: Apply Kubernetes manifests

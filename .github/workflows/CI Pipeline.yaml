@@ -321,13 +321,14 @@ jobs:
 
       - name: Set up kubeconfig
         run: |
-          mkdir -p .kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > .kube/config
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > ~/.kube/config
+          chmod 600 ~/.kube/config
 
       - name: Test kubectl connection
         run: |
-          cat .kube/config | grep server
-          kubectl --kubeconfig .kube/config get nodes
+          cat ~/.kube/config | grep server
+          kubectl --kubeconfig ~/.kube/config get nodes
 
       - name: Deploy updated Docker images
         run: |

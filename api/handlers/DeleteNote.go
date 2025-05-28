@@ -4,9 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/Tarat0r/Markdown-Blog/database"
 	db "github.com/Tarat0r/Markdown-Blog/database/sqlc"
+	"github.com/Tarat0r/Markdown-Blog/notifications"
 )
 
 // TODO Delete images if not used
@@ -35,4 +37,6 @@ func DeleteNote(w http.ResponseWriter, r *http.Request) {
 	pathJSON := map[string]string{"message": "Note deleted successfully", "path": path}
 	log.Println("path:", pathJSON)
 	ResponseJSON(w, http.StatusOK, pathJSON)
+	notifications.NotifyTelegram("🗑️ Заметка удалена! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\nID заметки: " + strconv.Itoa(int(params.ID)))
+
 }

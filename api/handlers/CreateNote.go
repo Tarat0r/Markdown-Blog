@@ -12,10 +12,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Tarat0r/Markdown-Blog/database"
 	db "github.com/Tarat0r/Markdown-Blog/database/sqlc"
+	"github.com/Tarat0r/Markdown-Blog/notifications"
 	obsidian "github.com/powerman/goldmark-obsidian"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"
@@ -192,6 +194,9 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 			return paths
 		}(),
 	})
+
+	// внутри handler'а или бизнес-логики
+	notifications.NotifyTelegram("📝 Новая заметка создана! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\nID заметки: " + strconv.Itoa(int(uploadedNote.ID)))
 }
 
 //-*-*-*-***-*-**-*--*-**--*--*-*-*-*-**--*-*-*-*-*-**--*-*-**-*--*

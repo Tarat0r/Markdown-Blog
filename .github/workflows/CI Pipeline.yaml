@@ -34,6 +34,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           STATIC_PATH: ${{ vars.STATIC_PATH }}
           HOST_ADDRESS: ${{ vars.HOST_ADDRESS }}
         run: go build ./...
@@ -110,6 +112,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           STATIC_PATH: ${{ vars.STATIC_PATH }}
           HOST_ADDRESS: ${{ vars.HOST_ADDRESS }}
         run: |
@@ -210,6 +214,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           STATIC_PATH: ${{ vars.STATIC_PATH }}
           HOST_ADDRESS: ${{ vars.HOST_ADDRESS }}
         run: |

@@ -5,10 +5,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Tarat0r/Markdown-Blog/database"
 	db "github.com/Tarat0r/Markdown-Blog/database/sqlc"
+	"github.com/Tarat0r/Markdown-Blog/notifications"
 )
 
 func UpdateNote(w http.ResponseWriter, r *http.Request) {
@@ -182,4 +184,6 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 			return paths
 		}(),
 	})
+	notifications.NotifyTelegram("✍🏻 Заметка редактированная! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\nID заметки: " + strconv.Itoa(int(noteParams.ID)))
+
 }

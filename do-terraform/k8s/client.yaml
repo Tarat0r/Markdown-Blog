@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mdblog-client
+  namespace: mdblog
 spec:
   replicas: 1
   selector:
@@ -32,6 +33,6 @@ spec:
   selector:
     app: mdblog-client
   ports:
-    - port: 80           # порт внутри кластера (для других сервисов)
+    - port: 5050           # порт внутри кластера (для других сервисов)
       targetPort: 5050   # порт внутри контейнера
       nodePort: 30080    # внешний порт (на IP ноды)

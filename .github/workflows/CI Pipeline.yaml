@@ -334,15 +334,22 @@ jobs:
 
       - name: Deploy updated Docker images
         run: |
+          cd do-terraform/k8s
           kubectl set image deployment/mdblog-api api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:latest -n mdblog
           kubectl set image deployment/mdblog-client client=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:latest -n mdblog
+
+      # # Apply the manifests
+      # - name: Apply Kubernetes manifests
+      #   run: |
+      #     kubectl apply -f api-deploy.yaml
+      #     kubectl apply -f client.yaml
 
       # Wait for rollout to finish
       - name: Check rollout status (API)
         run: kubectl rollout status deployment/mdblog-api -n mdblog
 
       - name: Check rollout status (Web)
-        run: kubectl rollout status deployment/mdblog-useless-client -n mdblog
+        run: kubectl rollout status deployment/mdblog-client -n mdblog
 
       # Notify Telegram
       - name: Notify Telegram (success)

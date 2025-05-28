@@ -326,7 +326,7 @@ jobs:
 
       - name: Test kubectl connection
         run: |
-          grep server $HOME/.kube/config
+          cat $HOME/.kube/config | grep server
           kubectl --kubeconfig $HOME/.kube/config get nodes
 
       - name: Deploy updated Docker images

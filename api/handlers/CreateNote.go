@@ -196,7 +196,7 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// внутри handler'а или бизнес-логики
-	notifications.NotifyTelegram("📝 Новая заметка создана! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\nID заметки: " + strconv.Itoa(int(uploadedNote.ID)))
+	notifications.NotifyTelegram("📝 Новая заметка создана! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\n ID заметки: " + strconv.Itoa(int(uploadedNote.ID)))
 }
 
 //-*-*-*-***-*-**-*--*-**--*--*-*-*-*-**--*-*-*-*-*-**--*-*-**-*--*

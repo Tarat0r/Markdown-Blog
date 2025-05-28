@@ -184,6 +184,6 @@ func UpdateNote(w http.ResponseWriter, r *http.Request) {
 			return paths
 		}(),
 	})
-	notifications.NotifyTelegram("✍🏻 Заметка редактированная! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\nID заметки: " + strconv.Itoa(int(noteParams.ID)))
+	notifications.NotifyTelegram("✍🏻 Заметка редактированная! \n Пользователь: " + strconv.Itoa(int(contextUserID)) + "\n ID заметки: " + strconv.Itoa(int(noteParams.ID)))
 
 }

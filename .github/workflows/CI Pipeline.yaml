@@ -338,12 +338,6 @@ jobs:
           kubectl set image deployment/mdblog-api api=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-api:${{ github.sha }} -n mdblog
           kubectl set image deployment/mdblog-client client=ghcr.io/${{ secrets.GHCR_USERNAME }}/mdblog-useless-client:${{ github.sha }} -n mdblog
 
-      # # Apply the manifests
-      # - name: Apply Kubernetes manifests
-      #   run: |
-      #     kubectl apply -f api-deploy.yaml
-      #     kubectl apply -f client.yaml
-
       # Wait for rollout to finish
       - name: Check rollout status (API)
         run: kubectl rollout status deployment/mdblog-api -n mdblog

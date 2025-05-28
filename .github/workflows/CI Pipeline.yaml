@@ -324,6 +324,10 @@ jobs:
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
+      - name: Debug DO token presence
+        run: echo "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" | wc -c
+
+
       # Fetch kubeconfig for the cluster
       - name: Set up kubeconfig
         run: doctl kubernetes cluster kubeconfig save ${{ vars.DO_CLUSTER_ID }}

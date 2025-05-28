@@ -318,14 +318,15 @@ jobs:
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
+          
+      - name: Debug DO token presence
+        run: echo "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" | wc -c
 
       - name: Install & Auth doctl
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
-      - name: Debug DO token presence
-        run: echo "${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}" | wc -c
 
 
       # Fetch kubeconfig for the cluster

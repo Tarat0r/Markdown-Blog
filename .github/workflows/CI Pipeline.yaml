@@ -254,7 +254,7 @@ jobs:
           coverage run -m unittest discover pc_client/tests
           coverage xml -o coverage-pc_client.xml
           coverage run -m unittest discover useless_client/tests
-          coverage xml -o coverage-useless_client.xml      
+          coverage xml -o coverage-useless_client.xml
 
       # ------------------ SonarQube Scan ------------------
       - name: SonarQube Scan

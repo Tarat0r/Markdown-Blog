@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -26,21 +27,21 @@ type ErrorResponse struct {
 // - err: The error object to log for debugging purposes.
 // - message: A user-friendly error message to include in the response.
 // - statusCode: The HTTP status code to set for the response.
-// func writeJSONError(w http.ResponseWriter, r *http.Request, err error, message string, statusCode int) {
-// userIDValue := r.Context().Value("contextUserID")
-// contextUserID := userIDValue.(int32)
-// if !ok {
-// 	log.Println("Error: contextUserIDnot found or invalid type in context")
-// 	w.WriteHeader(http.StatusInternalServerError)
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(ErrorResponse{Error: "Internal server error"})
-// 	return
-// }
-// log.Printf("user: %d, message: %s, error: %v", contextUserID, message, err)
-// w.WriteHeader(statusCode)
-// w.Header().Set("Content-Type", "application/json")
-// json.NewEncoder(w).Encode(ErrorResponse{Error: message})
-// }
+func writeJSONError(w http.ResponseWriter, r *http.Request, err error, message string, statusCode int) {
+	userIDValue := r.Context().Value("contextUserID")
+	contextUserID, ok := userIDValue.(int32)
+	if !ok {
+		log.Println("Error: contextUserIDnot found or invalid type in context")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ErrorResponse{Error: "Internal server error"})
+		return
+	}
+	log.Printf("user: %d, message: %s, error: %v", contextUserID, message, err)
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ErrorResponse{Error: message})
+}
 
 // Helper function to return JSON response
 func ResponseJSON(w http.ResponseWriter, code int, data any) {
@@ -53,16 +54,16 @@ func ResponseJSON(w http.ResponseWriter, code int, data any) {
 func GetIDFromURI(w http.ResponseWriter, r *http.Request, contextUserID int32) (int32, bool) {
 	noteIDint, err := strconv.Atoi(r.PathValue("NoteID"))
 	if err != nil {
-		// writeJSONError(w, r, err, "Invalid note ID", http.StatusBadRequest)
+		writeJSONError(w, r, err, "Invalid note ID", http.StatusBadRequest)
 		return 0, false
 	}
 
 	noteID := int32(noteIDint)
-	// log.Println("user:", contextUserID, " note:", noteID)
+	log.Println("user:", contextUserID, " note:", noteID)
 
 	_, err = database.Queries.GetNoteByID(context.Background(), noteID)
 	if err != nil {
-		// writeJSONError(w, r, err, "Note doesn't exist", http.StatusBadRequest)
+		writeJSONError(w, r, err, "Note doesn't exist", http.StatusBadRequest)
 		return 0, false
 	}
 

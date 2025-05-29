@@ -21,7 +21,7 @@ type NoteResponse struct {
 func GetNote(w http.ResponseWriter, r *http.Request) {
 	contextUserID, ok := r.Context().Value("contextUserID").(int32)
 	if !ok {
-		// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -35,7 +35,7 @@ func GetNote(w http.ResponseWriter, r *http.Request) {
 
 	note, err := database.Queries.GetNoteByID(context.Background(), id)
 	if err != nil {
-		// writeJSONError(w, r, err, "Error getting note", http.StatusInternalServerError)
+		writeJSONError(w, r, err, "Error getting note", http.StatusInternalServerError)
 		return
 	}
 

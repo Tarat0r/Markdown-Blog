@@ -11,25 +11,25 @@ import (
 
 func GetImage(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
-	contextUserID := r.Context().Value("contextUserID").(int32)
-	// if !ok {
-	// 	writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
-	// 	return
-	// }
+	contextUserID, ok := r.Context().Value("contextUserID").(int32)
+	if !ok {
+		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	// Get image hash from URL
 	imageHash := r.PathValue("ImageHash")
 
 	_, err := database.Queries.UserCanAccessImageByHash(r.Context(), db.UserCanAccessImageByHashParams{UserID: contextUserID, Hash: imageHash})
 	if err != nil {
-		// writeJSONError(w, r, err, "Unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, r, err, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	imagePath := os.Getenv("STATIC_PATH") + "/" + imageHash
 	file, err := os.Open(imagePath)
 	if err != nil {
-		// http.Error(w, "Image not found", http.StatusNotFound)
+		http.Error(w, "Image not found", http.StatusNotFound)
 		return
 	}
 	defer file.Close()

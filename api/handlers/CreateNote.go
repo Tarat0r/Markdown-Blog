@@ -48,65 +48,66 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	// Get user ID from context
 	contextUserID, ok := r.Context().Value("contextUserID").(int32)
 	if !ok {
-		// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	// File Upload Handler
 	// Parse multipart form (Max 50MB)
 	err := r.ParseMultipartForm(50 << 20)
-	// if err != nil {
-	// 	http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
-	// 	return
-	// }
+	if err != nil {
+		http.Error(w, "Failed to parse multipart form", http.StatusBadRequest)
+		return
+	}
 
 	// Extract JSON metadata
 	var req UploadRequest
 	metadata := r.FormValue("metadata")
 	if err := json.Unmarshal([]byte(metadata), &req); err != nil {
-		// 	writeJSONError(w, r, err, "Invalid JSON metadata", http.StatusBadRequest)
+		writeJSONError(w, r, err, "Invalid JSON metadata", http.StatusBadRequest)
 		return
 	}
 
 	// Handle Image Uploads
 	images, err := ImageUploadHandler(w, r, req, contextUserID)
-	// if err != nil {
-	// 	log.Println("user:", contextUserID, "", err)
-	// 	writeJSONError(w, r, err, "Failed to save images", http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		log.Println("user:", contextUserID, "", err)
+		writeJSONError(w, r, err, "Failed to save images", http.StatusInternalServerError)
+		return
+	}
 
 	// Handle Markdown file upload
 	markdownFiles := r.MultipartForm.File["markdown"]
 	if len(markdownFiles) != 1 {
-		// 	writeJSONError(w, r, nil, "Exactly one Markdown file is required", http.StatusBadRequest)
+		writeJSONError(w, r, nil, "Exactly one Markdown file is required", http.StatusBadRequest)
 		return
 	}
 
 	mdFile, header, err := r.FormFile("markdown")
-	// if err != nil {
-	// 	writeJSONError(w, r, err, "Markdown file is required", http.StatusBadRequest)
-	// 	return
-	// }
+	if err != nil {
+		writeJSONError(w, r, err, "Markdown file is required", http.StatusBadRequest)
+		return
+	}
 	defer mdFile.Close()
 
 	// Check MIME type of Markdown file
 	buffer := make([]byte, 512)
 	n, err := mdFile.Read(buffer)
-	// if err != nil {
-	// 	log.Println("user:", contextUserID, "", "Failed to read file", " ", err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		log.Println("user:", contextUserID, "", "Failed to read file", " ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	if _, err := mdFile.Seek(0, io.SeekStart); err != nil {
-		// log.Println("user:", contextUserID, "", "Failed to reset file pointer", " ", err)
-		// w.WriteHeader(http.StatusInternalServerError)
+		log.Println("user:", contextUserID, "", "Failed to reset file pointer", " ", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	if !IsValidMarkdown(http.DetectContentType(buffer), n) {
-		// log.Println("user:", contextUserID, "", strings.TrimSpace(mimeType), " ", header.Filename)
-		// writeJSONError(w, r, nil, "Invalid markdown file type", http.StatusBadRequest)
+	mimeType := http.DetectContentType(buffer)
+	if !IsValidMarkdown(mimeType, n) {
+		log.Println("user:", contextUserID, "", strings.TrimSpace(mimeType), " ", header.Filename)
+		writeJSONError(w, r, nil, "Invalid markdown file type", http.StatusBadRequest)
 		return
 	}
 
@@ -116,48 +117,48 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 	noteParams.UserID = contextUserID
 	// Compute SHA-256 Hash of Markdown file
 	noteParams.Hash, err = ComputeSHA256Hash(mdFile)
-	// if err != nil {
-	// 	log.Println("user:", contextUserID, "", "Failed to compute markdown file hash", " ", err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		log.Println("user:", contextUserID, "", "Failed to compute markdown file hash", " ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	// Reset file pointer to the beginning before reading the content
 	if _, err := mdFile.Seek(0, io.SeekStart); err != nil {
-		// log.Println("user:", contextUserID, "", "Failed to reset file pointer", " ", err)
-		// w.WriteHeader(http.StatusInternalServerError)
+		log.Println("user:", contextUserID, "", "Failed to reset file pointer", " ", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	mdContent, err := io.ReadAll(mdFile)
-	// if err != nil {
-	// 	log.Println("user:", contextUserID, "", "Failed to read markdown file", " ", err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		log.Println("user:", contextUserID, "", "Failed to read markdown file", " ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	noteParams.ContentMd = string(mdContent)
 
 	noteParams.Content, err = MarkdownToHTML(w, r, images, mdContent, noteParams.Path, contextUserID)
-	// if err != nil {
-	// 	writeJSONError(w, r, err, "Failed to convert Markdown to HTML (Image file is missing)", http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		writeJSONError(w, r, err, "Failed to convert Markdown to HTML (Image file is missing)", http.StatusInternalServerError)
+		return
+	}
 
 	notesByPath, err := database.Queries.GetNoteByPath(r.Context(), db.GetNoteByPathParams{Path: noteParams.Path, UserID: noteParams.UserID})
-	// if err != nil {
-	// 	writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
+		return
+	}
 	if len(notesByPath) > 0 {
-		// writeJSONError(w, r, errors.New("Note already exists"), "Note already exists", http.StatusBadRequest)
+		writeJSONError(w, r, errors.New("Note already exists"), "Note already exists", http.StatusBadRequest)
 		return
 	}
 
 	uploadedNote, err := database.Queries.CreateNote(r.Context(), noteParams)
-	// if err != nil {
-	// 	writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
-	// 	return
-	// }
+	if err != nil {
+		writeJSONError(w, r, err, "Failed to create note", http.StatusInternalServerError)
+		return
+	}
 
 	// Link note and images
 	for _, img := range images {
@@ -166,15 +167,15 @@ func CreateNote(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			continue
 		} else if !errors.Is(err, sql.ErrNoRows) {
-			// writeJSONError(w, r, err, "Failed to get note, image", http.StatusInternalServerError)
+			writeJSONError(w, r, err, "Failed to get note, image", http.StatusInternalServerError)
 			return
 		}
 		err = database.Queries.LinkImageToNote(r.Context(), db.LinkImageToNoteParams{ImageID: img.Id, NoteID: uploadedNote.ID})
-		// if err != nil {
-		// 	log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: uploadedNote.ID})
-		// 	writeJSONError(w, r, err, "Failed to link note and image", http.StatusInternalServerError)
-		// 	return
-		// }
+		if err != nil {
+			log.Println("Params: ", db.LinkImageToNoteParams{ImageID: img.Id, NoteID: uploadedNote.ID})
+			writeJSONError(w, r, err, "Failed to link note and image", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// Return JSON Response

@@ -15,7 +15,7 @@ import (
 func DeleteNote(w http.ResponseWriter, r *http.Request) {
 	contextUserID, ok := r.Context().Value("contextUserID").(int32)
 	if !ok {
-		// writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
+		writeJSONError(w, r, nil, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -31,7 +31,7 @@ func DeleteNote(w http.ResponseWriter, r *http.Request) {
 
 	path, err := database.Queries.DeleteNote(context.Background(), params)
 	if err != nil {
-		// writeJSONError(w, r, err, "Error deleting note", http.StatusInternalServerError)
+		writeJSONError(w, r, err, "Error deleting note", http.StatusInternalServerError)
 		return
 	}
 	pathJSON := map[string]string{"message": "Note deleted successfully", "path": path}
